@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<script>
+function hasGetUserMedia() {
+  return !!(navigator.getUserMedia || navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia || navigator.msGetUserMedia);
+}
+
+if (hasGetUserMedia()) {
+  alert('getUserMedia() supported!');
+} else {
+  alert('getUserMedia() is not supported in your browser');
+}
+</script>
+Take photo:<br>
+<input type="file" name="image" accept="image/*" capture="camera"/>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF8">
+<script src="bower_components/d3/d3.js" charset="utf-8"></script>
+<script src="bower_components/topojson/topojson.js"></script>
+<script src="bower_components/d3-plugins/geo/tile/tile.js"></script>
+<script src="bower_components/d3.mappu/dist/d3.mappu.js"></script>
+<script src="bower_components/underscore/underscore-min.js"></script>
+<script src="bower_components/cow/dist/cow.js"></script>
+
+<style>
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+path {
+  fill: none;
+  stroke: red;
+  stroke-linejoin: round;
+  
+}
+
+#header {
+	position: relative;
+	height: 10%;
+	width: 100%;
+	background: green;
+}
+
+#content {
+	position: relative;
+	height: 90%;
+	width: 100%;
+}
+#leftbar {
+	position: absolute;
+	height: 100%;
+	width: 100px;
+	background: red;
+}
+
+#map {
+  position: absolute;
+  margin: 0 auto;
+  overflow: hidden;
+  left: 0px;
+  height: 100%;
+  right: 0px;
+}
+
+.tile {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+}
+
+.tile.loading {
+  display: none;
+}
+
+/**
+Layer styling happens in CSS, or in a per-feature function
+**/
+.userLayer {
+    fill: steelBlue;
+    fill-opacity: 0.4;
+    stroke: steelBlue;
+}
+
+.coordinates {
+    font-size: 8pt;
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+}
+
+.popover {
+    position: absolute;
+    background: white;
+}
+
+.minor_road{
+	stroke: gray;
+	stroke-width: 1px;
+}
+.major_road{
+	stroke: orange;
+	stroke-width: 2px;
+}
+.highway {
+	stroke: yellow;
+	stroke-width: 4px;
+}
+
+.entityundefined {
+	stroke: solid orange 2px;
+	
+}
+
+#debug {
+	position: absolute;
+	bottom: 0px;
+	left: 10px;
+}
+
+</style>
+
+</head>
+<body>
+<!-- <div id="header">Header</div>
+<div id="content">
+	<div id="leftbar">leftbar</div>
+	<div id='map'></div>
+	<div id="debug"></div>
+</div>
+-->
+<div id='map'></div>
+<!--
+<script src="../src/d3.dev/d3.geo.raster.js"></script>
+<script src="../src/d3.dev/d3.quadtiles.js"></script>
+-->
+<script>
+
+//constants
+var COW_HERDNAME = 'geodanmiddag2016';
+var COW_IP = 'websocket.geodan.nl';
+var COW_PROTO = 'wss';
+var COW_PORT = 443;
+
+//forward declarations
+var userFeatures = [];
+var userLayer;
+
+var cow = new Cow.core({herdname: COW_HERDNAME});
+cow.socketservers({
+	_id: 'default', 
+	data: {
+		protocol: COW_PROTO,
+		ip: COW_IP, 
+		port: COW_PORT,
+		dir: COW_HERDNAME
+	}
+});
+cow.socketserver('default');
+
+var connection;
+cow.connect().then(function(d){
+	connection = d;
+}, function(e){
+	console.log('Connection error', e);
+});
+
+cow.userStore().on('datachange', function(){ 
+	var users = cow.users();
+	console.log('userStore changed:')
+	console.log(users); 
+	userFeatures = [];
+	users.forEach( function(d, i){
+		if (! d.data('location'))
+			return;
+		userFeatures.push({
+			id: d.id(),
+			type: 'Feature',
+			geometry: {type: 'Point', coordinates: d.data('location')},
+			properties: {name: d.data('name')}
+		});
+	});
+	userLayer.data = userFeatures;
+});
+
+var map = new d3.mappu.Map('map', {
+        //center: [-118.184051,33.999622],
+        center: [5.2,52.2],
+        zoom: 20,
+        minZoom: 10,
+        maxZoom: 30,
+        projection: d3.geo.mercator()
+});
+
+var layer = new d3.mappu.RasterLayer('layer1', {
+    ogc_type: 'tms',
+    url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+    opacity: 1
+}).addTo(map);
+
+userLayer = new d3.mappu.VectorLayer('userLayer',{
+    reproject: true,
+    duration: 1000,
+    labelStyle: {
+    	fill: 'steelBlue',
+    	stroke: 'steelBlue'
+    },
+    labelfield: 'name'
+}).addTo(map);
+
+map.resize();
+
+
+
+
+</script>
+
+</body>
+</html>

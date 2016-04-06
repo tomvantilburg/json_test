@@ -1,0 +1,23 @@
+{
+  "name": "Geodan Middag 2016 Dashboard",
+  "authors": [
+    "Rubio Vaughan <rubio.vaughan@geodan.nl>"
+  ],
+  "description": "",
+  "main": "index.html",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "cow": "https://github.com/Geodan/cow.git#^2.2.3",
+    "d3.mappu": "https://github.com/tomvantilburg/d3.mappu.git",
+    "underscore": "^1.8.3"
+  }
+}

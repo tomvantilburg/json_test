@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF8">
+<script src="bower_components/underscore/underscore-min.js"></script>
+<script src="bower_components/cow/dist/cow.js"></script>
+<script>
+
+//constants
+var COW_HERDNAME = 'geodanmiddag2016';
+var COW_IP = 'websocket.geodan.nl';
+var COW_PROTO = 'wss';
+var COW_PORT = 443;
+var COW_USER = 'Rubio';
+
+//forward declarations
+var userFeatures = [];
+var userLayer;
+var lastPos;
+var lastTime = Date.now;
+var speed = 0;
+var totalDistance = 0;
+
+//Create core object
+var cow = new Cow.core({herdname: COW_HERDNAME});
+
+//add a default socketserver
+cow.socketservers({
+	_id: 'default', 
+	data: {
+		protocol: COW_PROTO,
+		ip: COW_IP, 
+		port: COW_PORT,
+		dir: COW_HERDNAME
+	}
+});
+cow.socketserver('default');
+
+var connection;
+cow.connect().then(function(d){
+	connection = d;
+}, function(e){
+	console.log('Connection error', e);
+});
+
+cowUser = cow.users(COW_USER);
+if(!cowUser)
+	cowUser = cow.users({_id: COW_USER, data: {name: COW_USER}});
+
+navigator.geolocation.getCurrentPosition(updatePosition);
+setInterval(function(){ 
+		navigator.geolocation.getCurrentPosition(updatePosition);
+	}, 10000);
+
+function updatePosition(position) {
+	var curPos = [position.coords.longitude, position.coords.latitude];
+	var curTime = Date.now;
+	
+	if(!lastPos) {
+		cowUser.data('location', curPos)
+				.data('speed', speed)
+				.data('distance', totalDistance)
+				.sync();
+		lastPos = curPos;
+		lastTime = curTime;
+		return;
+	}
+	
+	var distance = calculateDistance(lastPos, curPos);
+	//if (distance < 0.010) return; // only update if distance >= 10m
+	
+	speed = distance / ((curTime - lastTime) / 3600000); // km/h
+	totalDistance += distance;
+	cowUser.data('location', curPos)
+			.data('speed', speed)
+			.data('distance', totalDistance)
+			.sync();	
+	lastPos = curPos;
+	lastTime = curTime;
+}
+
+// calculate distance in km between two lon/lat pairs 
+function calculateDistance(pos1, pos2) {
+	var R = 6371; // km
+	var dLon = (pos2[0] - pos1[0]).toRad(); 
+	var dLat = (pos2[1] - pos1[1]).toRad();
+	var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+			Math.cos(pos1[1].toRad()) * Math.cos(pos2[1].toRad()) * 
+			Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+	var d = R * c;
+	return d;
+}
+Number.prototype.toRad = function() {
+	return this * Math.PI / 180;
+}
+
+</script>
+<body>Geodanmiddag Mobile</body>
+</html>
