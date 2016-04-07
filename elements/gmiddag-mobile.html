@@ -1,0 +1,102 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<script src="../bower_components/d3/d3.js" charset="utf-8"></script>
+<script src="../bower_components/topojson/topojson.js"></script>
+<script src="../bower_components/d3-plugins/geo/tile/tile.js"></script>
+<script src="../bower_components/d3.mappu/dist/d3.mappu.js"></script>
+<script src="../bower_components/underscore/underscore-min.js"></script>
+<script src="../bower_components/cow/dist/cow.js"></script>
+<dom-module id="gmiddag-mobile">
+<style>
+
+	#map {
+		height: 100%;
+        position: absolute;
+        overflow: hidden;
+        left: 0px;
+        right: 0px;
+        bottom: 0px;
+        top: 0px;
+	}
+  #content {
+        position: relative;
+        height: 100%;
+    }
+    
+    #addphoto{
+    	position: absolute;
+    	bottom: 10px;
+    	right: 10px;
+    	z-index: 101;
+    }
+</style>
+<template>
+<div id='content'>
+	<paper-dialog opened="[[takephoto]]">
+	<!--<cow-element userfeatures='[[smurfen]]'></cow-element>-->
+	<h2>Foto</h2>
+  <paper-dialog-scrollable>
+    Hier komt de foto interface
+  </paper-dialog-scrollable>
+  <div class="buttons">
+    <paper-button dialog-dismiss>Cancel</paper-button>
+    <paper-button dialog-confirm>Accept</paper-button>
+  </div>
+	
+	</paper-dialog>
+	<div id='map'></div>
+	<paper-fab id="addphoto" toggles active="{{takephoto}}" icon="add"></paper-fab>
+</div>
+</template>
+</dom-module>
+
+<script>
+Polymer({
+    is: 'gmiddag-mobile',
+    properties: {
+    	map: {
+    		type: Object,
+    		notify: true
+    	},
+    	smurfen: {
+    		observer: '_usersChanged'
+    	},
+    	takephoto: false
+    },
+    _usersChanged: function(users){
+    	this.userLayer.data = users;
+    },
+    ready:function(){
+    	this.map = new d3.mappu.Map('map', {
+					//center: [-118.184051,33.999622],
+					center: [4.90,52.36],
+					zoom: 22,
+					minZoom: 10,
+					maxZoom: 30,
+					projection: d3.geo.mercator()
+			});
+		
+			var layer = new d3.mappu.RasterLayer('layer1', {
+				ogc_type: 'tms',
+				url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+				opacity: 1
+			}).addTo(this.map);
+		
+			userLayer = new d3.mappu.VectorLayer('userLayer',{
+				reproject: true,
+				duration: 1000,
+				labelStyle: {
+					fill: 'steelBlue',
+					stroke: 'steelBlue'
+				},
+				labelfield: 'name'
+			}).addTo(this.map);
+		
+			
+    },
+    attached: function(){
+    	this.map.resize();
+    }
+});
+</script>

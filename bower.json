@@ -18,6 +18,11 @@
   "dependencies": {
     "cow": "https://github.com/Geodan/cow.git#^2.2.3",
     "d3.mappu": "https://github.com/tomvantilburg/d3.mappu.git",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "iron-elements": "PolymerElements/iron-elements#^1.0.9",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.7"
+  },
+  "resolutions": {
+    "cow": "^2.2.3"
   }
 }
