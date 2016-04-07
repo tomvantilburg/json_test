@@ -2,17 +2,26 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> 
+<script src="bower_components/d3/d3.js" charset="utf-8"></script>
+<script src="bower_components/topojson/topojson.js"></script>
+<script src="bower_components/d3-plugins/geo/tile/tile.js"></script>
+<script src="bower_components/d3.mappu/dist/d3.mappu.js"></script>
 <script src="bower_components/underscore/underscore-min.js"></script>
 <script src="bower_components/cow/dist/cow.js"></script>
 
 <style>
 
-.inputName {
+#inputName, #inputAge {
+	display: block;
 	width: 150px;
+	margin-bottom: 15px;
 }
 
-.inputAge {
-	width: 30px;
+#inputAge {
+	width: 40px;
 }
 
 #login-container {
@@ -35,10 +44,40 @@
 	padding: 20px;
 }
 
+#map {
+  position: absolute;
+  overflow: hidden;
+  height: 70%;
+  width: 100%;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  margin: 10px;
+  border: 1px solid black;
+}
+
+.userLayer {
+    fill: steelBlue;
+    fill-opacity: 0.4;
+    stroke: steelBlue;
+}
+
 </style>
 </head>
 <body>
-
+<div id="login-container">
+	<div id="login">
+		&nbsp;<br>
+		Naam:&nbsp;<input id="inputName"size="15" value="">
+		Leeftijd:&nbsp;<input id="inputAge" size="3" type="number" value="">
+		<div id="loginstatus"></div>
+		<button id="startbutton" onClick="login()" disabled>Start</button>
+	</div>
+</div>
+<div id="mainstatus">
+Geodanmiddag 2016: tracking position...
+</div>
+<div id="map"></div>
 <script>
 
 //constants
@@ -48,7 +87,8 @@ var COW_PROTO = 'wss';
 var COW_PORT = 443;
 var COW_USER = 'Rubio';
 
-//forward declarations
+//globals
+var map;
 var userFeatures = [];
 var userLayer;
 var cowID;
@@ -57,6 +97,8 @@ var lastPos;
 var lastTime = new Date().getTime();
 var speed = 0;
 var totalDistance = 0;
+
+makeMap();
 
 //Create core object
 var cow = new Cow.core({herdname: COW_HERDNAME});
@@ -73,44 +115,77 @@ cow.socketservers({
 });
 cow.socketserver('default');
 
+cow.userStore().on('datachange', function(){ 
+	var users = cow.users();
+	userFeatures = [];
+	users.forEach( function(d, i){
+		if (!d.data('name') || !d.data('location'))
+			return;
+		userFeatures.push({
+			id: d.id(),
+			type: 'Feature',
+			geometry: {type: 'Point', coordinates: d.data('location')},
+			properties: {name: d.data('name')}
+		});
+	});
+	if(userFeatures.length > 0)
+		userLayer.data = userFeatures;
+});		
+
 var connection;
 cow.connect().then(function(d){
 	connection = d;
-cowID = getCookie('cowID');
-if(cowID) {
-	cowUser = cow.users(cowID);
-	if(!cowUser.data('name'))
-		document.getElementById('login').style.display = 'none';
-} else {
-	cowUser = cow.users({}).sync();
-	cowID = cowUser.id();
-	setCookie('cowID', cowID, 1);
-}
-}, function(e){
-	console.log('Connection error', e);
-});
+	cow.userStore().loaded.then(function(){
+		cowID = getCookie('cowID');
+		if(cowID) {
+			cowUser = cow.users(cowID);
+			if(!cowUser) 
+				makeCowUser();
+			else if(cowUser.data('name'))
+				document.getElementById('login-container').style.display = 'none';
+		} else {
+			makeCowUser();
+		}
+		document.getElementById("startbutton").disabled = false;
+	});
 
-
-function start() {
-	var userName = document.getElementById("userName").value
-	var userAge = parseInt(document.getElementById("userName").value)
-	if(userName.length < 2) {
-		alert('Naam moet minimaal twee letters lang zijn.');
-		return;
-	}
-	document.getElementById('login').style.display = 'none';
-	
-	cowUser.data('name', userName);
 	navigator.geolocation.getCurrentPosition(updatePosition);
 	setInterval(function(){ 
 			navigator.geolocation.getCurrentPosition(updatePosition);
 		}, 10000);
+}, function(e){
+	setStatus('Connection error: ' + e);
+});
+
+function makeCowUser(){
+	cowUser = cow.users({}).sync();
+	cowID = cowUser.id();
+	setCookie('cowID', cowID, 1);
+}
+
+function setStatus(status) {
+	document.getElementById('mainstatus').innerHTML = status;
+	document.getElementById('loginstatus').innerHTML = status;
+}
+
+function login() {
+	var userName = document.getElementById("inputName").value
+	var userAge = parseInt(document.getElementById("inputAge").value)
+	if(userName.length < 2) {
+		alert('Naam moet minimaal twee letters lang zijn.');
+		return;
+	}
+	document.getElementById('login-container').style.display = 'none';
+	cowUser.data('name', userName);
 }
 
 function updatePosition(position) {
 	var curPos = [position.coords.longitude, position.coords.latitude];
 	var curTime = new Date().getTime();
 	
+	map.center = curPos;
+	map.redraw();
+
 	if(!lastPos) {
 		cowUser.data('location', curPos)
 				.data('speed', speed)
@@ -169,17 +244,35 @@ function getCookie(cname) {
 	return "";
 }
 
+function makeMap() {
+	map = new d3.mappu.Map('map', {
+			//center: [-118.184051,33.999622],
+			center: [4.90,52.36],
+			zoom: 22,
+			minZoom: 10,
+			maxZoom: 30,
+			projection: d3.geo.mercator()
+	});
+
+	var layer = new d3.mappu.RasterLayer('layer1', {
+		ogc_type: 'tms',
+		url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+		opacity: 1
+	}).addTo(map);
+
+	userLayer = new d3.mappu.VectorLayer('userLayer',{
+		reproject: true,
+		duration: 1000,
+		labelStyle: {
+			fill: 'steelBlue',
+			stroke: 'steelBlue'
+		},
+		labelfield: 'name'
+	}).addTo(map);
+
+	map.resize();
+}
+
 </script>
-<div id="login-container">
-	<div id="login">
-		&nbsp;<br>
-		Naam:&nbsp;<input class="inputName" size="15" id="userName" value=""><br><br>
-		Leeftijd:&nbsp;<input class="inputAge" size="3" id="userAge" type="number" value=""><br><br>
-		<button id="outline" onClick="start()">Start</button>
-	</div>
-</div>
-<div id="main">
-	Geodanmiddag 2016: tracking position...
-</div>
 </body>
 </html>
