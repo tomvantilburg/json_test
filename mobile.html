@@ -4,6 +4,41 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF8">
 <script src="bower_components/underscore/underscore-min.js"></script>
 <script src="bower_components/cow/dist/cow.js"></script>
+
+<style>
+
+.inputName {
+	width: 150px;
+}
+
+.inputAge {
+	width: 30px;
+}
+
+#login-container {
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	top: 0px; bottom: 0px; left: 0px; right: 0px;
+	z-index: 9;
+	background: rgb(255, 255, 255);
+}
+
+#login {
+	z-index: 10;
+	display: block;
+	position: absolute;
+	top: 50%; left: 50%;
+	transform: translate(-50%,-50%);
+	width: 300px;
+	height: 300px;
+	padding: 20px;
+}
+
+</style>
+</head>
+<body>
+
 <script>
 
 //constants
@@ -16,8 +51,10 @@ var COW_USER = 'Rubio';
 //forward declarations
 var userFeatures = [];
 var userLayer;
+var cowID;
+var cowUser;
 var lastPos;
-var lastTime = Date.now;
+var lastTime = new Date().getTime();
 var speed = 0;
 var totalDistance = 0;
 
@@ -39,22 +76,40 @@ cow.socketserver('default');
 var connection;
 cow.connect().then(function(d){
 	connection = d;
+cowID = getCookie('cowID');
+if(cowID) {
+	cowUser = cow.users(cowID);
+	if(!cowUser.data('name'))
+		document.getElementById('login').style.display = 'none';
+} else {
+	cowUser = cow.users({}).sync();
+	cowID = cowUser.id();
+	setCookie('cowID', cowID, 1);
+}
 }, function(e){
 	console.log('Connection error', e);
 });
 
-cowUser = cow.users(COW_USER);
-if(!cowUser)
-	cowUser = cow.users({_id: COW_USER, data: {name: COW_USER}});
 
-navigator.geolocation.getCurrentPosition(updatePosition);
-setInterval(function(){ 
-		navigator.geolocation.getCurrentPosition(updatePosition);
-	}, 10000);
+function start() {
+	var userName = document.getElementById("userName").value
+	var userAge = parseInt(document.getElementById("userName").value)
+	if(userName.length < 2) {
+		alert('Naam moet minimaal twee letters lang zijn.');
+		return;
+	}
+	document.getElementById('login').style.display = 'none';
+	
+	cowUser.data('name', userName);
+	navigator.geolocation.getCurrentPosition(updatePosition);
+	setInterval(function(){ 
+			navigator.geolocation.getCurrentPosition(updatePosition);
+		}, 10000);
+}
 
 function updatePosition(position) {
 	var curPos = [position.coords.longitude, position.coords.latitude];
-	var curTime = Date.now;
+	var curTime = new Date().getTime();
 	
 	if(!lastPos) {
 		cowUser.data('location', curPos)
@@ -67,10 +122,11 @@ function updatePosition(position) {
 	}
 	
 	var distance = calculateDistance(lastPos, curPos);
-	//if (distance < 0.010) return; // only update if distance >= 10m
-	
-	speed = distance / ((curTime - lastTime) / 3600000); // km/h
 	totalDistance += distance;
+	speed = distance / ((curTime - lastTime) / 3600000); // km/h
+
+	if (distance < 0.010) return; // only update if distance >= 10m
+	
 	cowUser.data('location', curPos)
 			.data('speed', speed)
 			.data('distance', totalDistance)
@@ -95,6 +151,35 @@ Number.prototype.toRad = function() {
 	return this * Math.PI / 180;
 }
 
+function setCookie(cname, cvalue, exdays) {
+	var d = new Date();
+	d.setTime(d.getTime() + (exdays*24*60*60*1000));
+	var expires = "expires="+d.toUTCString();
+	document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function getCookie(cname) {
+	var name = cname + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0; i<ca.length; i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1);
+		if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+	}
+	return "";
+}
+
 </script>
-<body>Geodanmiddag Mobile</body>
+<div id="login-container">
+	<div id="login">
+		&nbsp;<br>
+		Naam:&nbsp;<input class="inputName" size="15" id="userName" value=""><br><br>
+		Leeftijd:&nbsp;<input class="inputAge" size="3" id="userAge" type="number" value=""><br><br>
+		<button id="outline" onClick="start()">Start</button>
+	</div>
+</div>
+<div id="main">
+	Geodanmiddag 2016: tracking position...
+</div>
+</body>
 </html>

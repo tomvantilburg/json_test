@@ -16,32 +16,6 @@ html, body {
   height: 100%;
 }
 
-path {
-  fill: none;
-  stroke: red;
-  stroke-linejoin: round;
-  
-}
-
-#header {
-	position: relative;
-	height: 10%;
-	width: 100%;
-	background: green;
-}
-
-#content {
-	position: relative;
-	height: 90%;
-	width: 100%;
-}
-#leftbar {
-	position: absolute;
-	height: 100%;
-	width: 100px;
-	background: red;
-}
-
 #map {
   position: absolute;
   margin: 0 auto;
@@ -70,58 +44,17 @@ Layer styling happens in CSS, or in a per-feature function
     stroke: steelBlue;
 }
 
-.coordinates {
-    font-size: 8pt;
-    position: absolute;
-    bottom: 2px;
-    left: 2px;
-}
-
 .popover {
     position: absolute;
     background: white;
-}
-
-.minor_road{
-	stroke: gray;
-	stroke-width: 1px;
-}
-.major_road{
-	stroke: orange;
-	stroke-width: 2px;
-}
-.highway {
-	stroke: yellow;
-	stroke-width: 4px;
-}
-
-.entityundefined {
-	stroke: solid orange 2px;
-	
-}
-
-#debug {
-	position: absolute;
-	bottom: 0px;
-	left: 10px;
 }
 
 </style>
 
 </head>
 <body>
-<!-- <div id="header">Header</div>
-<div id="content">
-	<div id="leftbar">leftbar</div>
-	<div id='map'></div>
-	<div id="debug"></div>
-</div>
--->
 <div id='map'></div>
-<!--
-<script src="../src/d3.dev/d3.geo.raster.js"></script>
-<script src="../src/d3.dev/d3.quadtiles.js"></script>
--->
+
 <script>
 
 //constants
@@ -168,13 +101,14 @@ cow.userStore().on('datachange', function(){
 			properties: {name: d.data('name')}
 		});
 	});
-	userLayer.data = userFeatures;
+	if(userFeatures.length > 0)
+		userLayer.data = userFeatures;
 });
 
 var map = new d3.mappu.Map('map', {
         //center: [-118.184051,33.999622],
-        center: [5.2,52.2],
-        zoom: 20,
+        center: [4.90,52.36],
+        zoom: 22,
         minZoom: 10,
         maxZoom: 30,
         projection: d3.geo.mercator()
@@ -202,6 +136,5 @@ map.resize();
 
 
 </script>
-
 </body>
 </html>
