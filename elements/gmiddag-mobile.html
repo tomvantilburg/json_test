@@ -48,6 +48,7 @@
 	position: absolute;
 	bottom: 10px;
 	right: 10px;
+	z-index: 101;
 }
 
 #camerainput{
@@ -60,9 +61,9 @@
 	height: 50px;
 	font-size: 20px;
 	cursor: pointer;
-	z-index: 105;
 	opacity: 0;
 	filter: alpha(opacity=0);
+	z-index: 101;
 }
 
 #spinner{
@@ -79,12 +80,14 @@
 #toast {
 	z-index: 101;
 }
+
 paper-dialog.warning {
-      border: 2px solid;
-      border-color: var(--paper-orange-500);
-      background-color: var(--paper-light-orange-50);
-      color: var(--paper-orange-500);
-    }
+	width: 200px;
+	border: 2px solid;
+	border-color: var(--paper-orange-500);
+	background-color: var(--paper-light-orange-50);
+	color: var(--paper-orange-500);
+}
 
 </style>
 <template>
