@@ -4,6 +4,7 @@
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
 <link rel="import" href="../bower_components/carbon-location/carbon-location.html">
@@ -75,12 +76,16 @@
 	width: 200px;
 }
 
+#toast {
+	z-index: 101;
+}
+
 </style>
 <template>
 <!-- NON UI elements -->
 	<carbon-location use-hash-as-path route="{{route}}"></carbon-location>
 	<carbon-route route="{{route}}" pattern="/groups" tail="{{groupsRoute}}" active="{{groupsActive}}"></carbon-route>
-	
+
 	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
 
@@ -94,16 +99,16 @@
 	</paper-dialog>
 
 	<div id='map'></div>
-	<paper-fab mini id="mylocation" toggles active="{{loginDialog}}" icon="maps:my-location"></paper-fab>
+	<paper-fab mini id="mylocation" on-click="" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-spinner id="spinner"></paper-spinner><br>
-	<form is="iron-form" id="form" method="post" action="/form/handler">
-		<input type="file" id="camerainput" accept="image/*" capture="camera" on-change="previewFile"/>
+	<form is="iron-form" id="photoForm" method="post" content-type="application/x-www-form-urlencoded" action="https://saturnus.geodan.nl/geodandag/uploadphoto">
+		<input type="file" required id="camerainput" accept="image/*" capture="camera" on-change="previewFile"/>
 		<paper-dialog modal id="photoDialog" opened="[[photoDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 			<img id="photopreview" src="" alt="">
 			<div class="buttons">
 				<paper-button dialog-dismiss>Cancel</paper-button>&nbsp;
-				<paper-button dialog-confirm>Submit</paper-button>
+				<paper-button dialog-confirm on-click="uploadPhoto">Submit</paper-button>
 			</div>
 		</paper-dialog>
 	</form>
@@ -125,17 +130,18 @@ Polymer({
 		knownuser: {
 			type: Boolean
 		},
-		photoDialog: false,
-		photoPreview: '',
 		curpos: {
 			type: Array
 		},
 		me: {
 			type: Object
-		}
+		},
+		photoDialog: false,
+		photoPreview: '',
+		msg: ''
 	},
 	observers: [
-		'_curposChanged(curpos,map, me)',
+		'_curposChanged(curpos,map,me)',
 		'_usersChanged(userfeatures,userLayer)'
 	],
 	_usersChanged: function(users){
@@ -147,6 +153,7 @@ Polymer({
 		me.data('location', pos).sync();
 		//TODO: add speed and totalDistance
 	},
+
 	ready:function(){
 		var self = this;
 		this.map = new d3.mappu.Map('map', {
@@ -208,8 +215,7 @@ Polymer({
 		reader.onerror = function () {
 			spinner.active = false;
 			preview.src = '';
-			preview.alt = 'Error loading image';
-			self.photoDialog = true;
+			self.status('Error loading image');
 		}
 
 		if (file) {
@@ -217,7 +223,21 @@ Polymer({
 		} else {
 			self.photoPreview = '';
 		}
-	}
+	},
 
+	uploadPhoto: function(){
+		return;
+		var photoForm = this.$.photoForm;
+		if(photoForm.validate()){
+			photoForm.submit();
+		} else {
+
+		}
+	},
+
+	status: function(status){
+		this.msg = status;
+		this.$.toast.open();
+	}
 });
 </script>
