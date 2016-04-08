@@ -1,14 +1,16 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
-
+<link rel="import" href="../bower_components/carbon-route/carbon-location.html">
+<link rel="import" href="../bower_components/carbon-route/carbon-route.html">
 
 <dom-module id="login-element">
 <style>
 
 </style>
 <template>
-	<paper-input id="username" label="Naam" required auto-validate error-message="invullen svp"></paper-input>
+
+	<paper-input id="username" label="Naam" required auto-validate error-message="invullen svp" type="text"></paper-input>
 	<paper-input id="age" label="leeftijd" required auto-validate error-message="invullen svp" type="number"></paper-input>
 
 	<paper-button on-click='submit'>Login</paper-button>
@@ -31,10 +33,10 @@ Polymer({
 			type: Number,
 			notify: true
 		},
+
     	groupid: {
     		type: String,
     		notify: true,
-    		value: 'test'//TODO
     	},
     	knownuser:{
 			type: Boolean,
@@ -42,8 +44,8 @@ Polymer({
     		notify: true
     	}
     },
+
     ready:function(){
-    	//TODO: get groupid from url
 
 		function getCookie(cname) {
 			var name = cname + "=";
@@ -63,6 +65,7 @@ Polymer({
 
     },
     submit: function(){
+
     	this.userid = new Date().getTime().toString();
     	this.username = this.$.username.value;
     	this.knownuser = true;
