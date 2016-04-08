@@ -31,27 +31,30 @@ Polymer({
     		value: 'test'//TODO
     	},
     	knownuser:{
+			type: Boolean,
+			value: false,
     		notify: true
     	}
     },
     ready:function(){
     	//TODO: get groupid from url
-    	
-    	this.userid = getCookie('cowID');
-    	if (this.userid){
+
+		function getCookie(cname) {
+			var name = cname + "=";
+			var ca = document.cookie.split(';');
+			for(var i=0; i<ca.length; i++) {
+				var c = ca[i];
+				while (c.charAt(0)==' ') c = c.substring(1);
+				if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+			}
+			return null;
+		}
+		var userid = getCookie('cowID');
+		if (userid){
+			this.userid = userid;
     		this.knownuser = true;
     	}
-			function getCookie(cname) {
-				var name = cname + "=";
-				var ca = document.cookie.split(';');
-				for(var i=0; i<ca.length; i++) {
-					var c = ca[i];
-					while (c.charAt(0)==' ') c = c.substring(1);
-					if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
-				}
-				return "";
-			}
-			
+
     },
     submit: function(){
     	this.userid = new Date().getTime().toString();
@@ -62,8 +65,8 @@ Polymer({
 				d.setTime(d.getTime() + (exdays*24*60*60*1000));
 				var expires = "expires="+d.toUTCString();
 				document.cookie = cname + "=" + cvalue + "; " + expires;
-			}
-			setCookie('cowID', this.userid, 1);
+		}
+		setCookie('cowID', this.userid, 1);
     }
 });
 </script>
