@@ -1,6 +1,13 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link href="../bower_components/iron-icons/maps-icons.html" rel="import">
+<link href="../bower_components/iron-icons/image-icons.html" rel="import">
+
 <link rel="import" href="./login-element.html">
 <link rel="import" href="./cow-element.html">
 <link rel="import" href="./geopos-element.html">
@@ -12,36 +19,70 @@
 
 <dom-module id="gmiddag-mobile">
 <style>
+#map {
+	height: 100%;
+	position: absolute;
+	overflow: hidden;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	top: 0px;
+}
+#content {
+	position: relative;
+	height: 100%;
+}
 
-	#map {
-		height: 100%;
-        position: absolute;
-        overflow: hidden;
-        left: 0px;
-        right: 0px;
-        bottom: 0px;
-        top: 0px;
-	}
-  #content {
-        position: relative;
-        height: 100%;
-    }
+#mylocation{
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+	z-index: 101;
+}
 
-    #addphoto{
-    	position: absolute;
-    	bottom: 10px;
-    	right: 10px;
-    	z-index: 101;
-    }
+#camerabutton{
+	position: absolute;
+	bottom: 10px;
+	right: 10px;
+}
+
+#camerainput{
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	margin: 0;
+	padding: 0;
+	width: 50px;
+	height: 50px;
+	font-size: 20px;
+	cursor: pointer;
+	z-index: 105;
+	opacity: 0;
+	filter: alpha(opacity=0);
+}
+
+#spinner{
+	position: absolute;
+	top: 50%; left: 50%;
+	transform: translate(-50%,-50%);
+	z-index: 105;
+}
+
+#photopreview{
+	width: 200px;
+}
+
 </style>
 <template>
 <div id='content'>
-	<paper-dialog modal id='logindialog' opened="[[!knownuser]]">
+	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
 		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
 	</paper-dialog>
-	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{smurfen}}' me='{{me}}'></cow-element>
+
+	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[userfeatures]]' me='{{me}}'></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
+<!--
 	<paper-dialog opened="[[takephoto]]">
 	<h2>Foto</h2>
   <paper-dialog-scrollable>
@@ -53,74 +94,122 @@
   </div>
 
 	</paper-dialog>
+-->
+
 	<div id='map'></div>
-	<paper-fab id="addphoto" toggles active="{{takephoto}}" icon="add"></paper-fab>
+	<paper-fab mini id="mylocation" toggles active="{{loginDialog}}" icon="maps:my-location"></paper-fab>
+	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
+	<paper-spinner id="spinner"></paper-spinner><br>
+	<form is="iron-form" id="form" method="post" action="/form/handler">
+		<input type="file" id="camerainput" accept="image/*" capture="camera" on-change="previewFile"/>
+		<paper-dialog modal id="photoDialog" opened="[[photoDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+			<img id="photopreview" src="" alt="">
+			<div class="buttons">
+				<paper-button dialog-dismiss>Cancel</paper-button>&nbsp;
+				<paper-button dialog-confirm>Submit</paper-button>
+			</div>
+		</paper-dialog>
+	</form>
 </div>
 </template>
 </dom-module>
 
 <script>
 Polymer({
-    is: 'gmiddag-mobile',
-    properties: {
-    	map: {
-    		type: Object,
-    		notify: true
-    	},
-    	smurfen: {
-    		type: Array
-    	},
-    	takephoto: false,
+	is: 'gmiddag-mobile',
+	properties: {
+		map: {
+			type: Object,
+			notify: true
+		},
+		userfeatures: {
+			type: Array
+		},
+		knownuser: {
+			value: false
+		},
+		photoDialog: false,
+		photoPreview: '',
 		curpos: {
 			type: Array
 		},
 		me: {
 			type: Object
 		}
-    },
+	},
 	observers: [
 		'_curposChanged(curpos,map, me)',
 		'_usersChanged(smurfen,userLayer)'
 	],
-    _usersChanged: function(users){
-    	this.userLayer.data = users;
-    },
+	_usersChanged: function(users){
+		this.userLayer.data = users;
+	},
 	_curposChanged: function(pos,map,me){
 		map.center = pos;
 		map.redraw();
 		me.data('location', pos).sync();
 		//TODO: add speed and totalDistance
 	},
-    ready:function(){
-    	this.map = new d3.mappu.Map('map', {
-				//center: [-118.184051,33.999622],
-				center: [4.90,52.36],
-				zoom: 22,
-				minZoom: 10,
-				maxZoom: 30,
-				projection: d3.geo.mercator()
-		});
+	ready:function(){
+		this.map = new d3.mappu.Map('map', {
+					center: [4.90,52.36],
+					zoom: 22,
+					minZoom: 10,
+					maxZoom: 30,
+					projection: d3.geo.mercator()
+			});
 
-		var layer = new d3.mappu.RasterLayer('layer1', {
-			ogc_type: 'tms',
-			url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-			opacity: 1
-		}).addTo(this.map);
+			var layer = new d3.mappu.RasterLayer('layer1', {
+				ogc_type: 'tms',
+				url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+				opacity: 1
+			}).addTo(this.map);
 
-		this.userLayer = new d3.mappu.VectorLayer('userLayer',{
-			reproject: true,
-			duration: 1000,
-			labelStyle: {
-				fill: 'steelBlue',
-				stroke: 'steelBlue'
-			},
-			labelfield: 'name'
-		}).addTo(this.map);
+			this.userLayer = new d3.mappu.VectorLayer('userLayer',{
+				reproject: true,
+				duration: 1000,
+				labelStyle: {
+					fill: 'steelBlue',
+					stroke: 'steelBlue'
+				},
+				labelfield: 'name'
+			}).addTo(this.map);
 
 
-    },
-    attached: function(){
-    	this.map.resize();
-    }
+	},
+
+	attached: function(){
+		this.map.resize();
+	},
+
+	previewFile: function() {
+		var preview = this.$.photopreview;
+		var file = this.$.camerainput.files[0];
+		var spinner = this.$.spinner;
+		var reader = new FileReader();
+
+		spinner.active = true;
+		var self = this;
+		reader.onloadend = function () {
+			preview.src = reader.result;
+			preview.onload = function() {
+				spinner.active = false;
+				self.photoDialog = true;
+			}
+		}
+		reader.onerror = function () {
+			spinner.active = false;
+			preview.src = '';
+			preview.alt = 'Error loading image';
+			self.photoDialog = true;
+		}
+
+		if (file) {
+			reader.readAsDataURL(file);
+		} else {
+			self.photoPreview = '';
+		}
+	}
+
 });
 </script>
