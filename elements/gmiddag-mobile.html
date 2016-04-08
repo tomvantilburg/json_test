@@ -151,9 +151,10 @@ Polymer({
 		//TODO: add speed and totalDistance
 	},
 	ready:function(){
+		var self = this;
 		this.map = new d3.mappu.Map('map', {
 					center: [4.90,52.36],
-					zoom: 22,
+					zoom: 24,
 					minZoom: 10,
 					maxZoom: 30,
 					projection: d3.geo.mercator()
@@ -165,12 +166,22 @@ Polymer({
 				opacity: 1
 			}).addTo(this.map);
 
+			var opacscale = d3.scale.linear().range([0,1]).domain([23,24]);
+			var opacfunc = function(){
+				return opacscale(self.map.zoom);
+			}
+
 			this.userLayer = new d3.mappu.VectorLayer('userLayer',{
 				reproject: true,
 				duration: 1000,
 				labelStyle: {
 					fill: 'steelBlue',
-					stroke: 'steelBlue'
+					stroke: 'none',
+					opacity: opacfunc
+				},
+				style: {
+					fill: 'steelBlue',
+					strone: 'none'
 				},
 				labelfield: 'name'
 			}).addTo(this.map);
