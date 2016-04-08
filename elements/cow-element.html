@@ -29,10 +29,6 @@ Polymer({
     		notify: true,
     		readonly: true
     	},
-    	curposition:{
-    		type: Object,
-    		observer: '_curposChanged'
-    	},
     	me: {
     		type: Object,
 			notify: true
@@ -42,13 +38,10 @@ Polymer({
 		//userid and groupid known from login-element
     	'login(userid, groupid)'
     ],
-    _curposChanged: function(pos){
-    	//TODO: update my user location
-    },
     ready:function(userid, usergroup){
     	//constants
 		var COW_HERDNAME = 'geodanmiddag2016';
-		var COW_IP = 'websocket.geodan.nl';
+		var COW_IP = 'saturnus.geodan.nl';
 		var COW_PROTO = 'wss';
 		var COW_PORT = 443;
 
