@@ -8,8 +8,7 @@
 <link rel="import" href="../bower_components/iron-form/iron-form.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
-<link rel="import" href="../bower_components/carbon-route/carbon-location.html">
-<link rel="import" href="../bower_components/carbon-route/carbon-route.html">
+
 <link href="../bower_components/iron-icons/maps-icons.html" rel="import">
 <link href="../bower_components/iron-icons/image-icons.html" rel="import">
 
@@ -80,27 +79,35 @@
 #toast {
 	z-index: 101;
 }
-paper-toolbar {
-	z-index: 1001;
-}
+paper-dialog.warning {
+      border: 2px solid;
+      border-color: var(--paper-orange-500);
+      background-color: var(--paper-light-orange-50);
+      color: var(--paper-orange-500);
+    }
 
 </style>
 <template>
 <!-- NON UI elements -->
-	<carbon-location use-hash-as-path route="{{route}}"></carbon-location>
-	<carbon-route route="{{route}}" pattern="/groups" tail="{{groupsRoute}}" active="{{groupsActive}}"></carbon-route>
+
+	<carbon-location route="{{route}}"></carbon-location>
 
 	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
 
 
 <div id='content'>
-	<paper-toolbar>
-		<div class="title">{{groupsRoute.path}}</div>
-	</paper-toolbar>
+
+	<paper-dialog class='warning' modal id='groupdialog' opened="[[!groupid]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<h2>Geen groep</h2>
+		<div>
+			Er is geen groep bekend in de URL
+		</div>
+	</paper-dialog>
+
 	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
-		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
+		<login-element username='{{username}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
 	</paper-dialog>
 
 	<div id='map'></div>
@@ -144,12 +151,19 @@ Polymer({
 		},
 		photoDialog: false,
 		photoPreview: '',
-		msg: ''
+		msg: '',
+		route: {
+			type: Object,
+			observer: '_routeChanged'
+		}
 	},
 	observers: [
 		'_curposChanged(curpos,map,me)',
 		'_usersChanged(userfeatures,userLayer)'
 	],
+	_routeChanged: function(route){
+		this.groupid = route.__queryParams.group || false;
+	},
 	_usersChanged: function(users){
 		this.userLayer.data = users;
 	},
