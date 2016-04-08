@@ -32,7 +32,11 @@ Polymer({
     	me: {
     		type: Object,
 			notify: true
-    	}
+    	},
+		cow: {  // TODO: Check with Tom if this is needed
+			type: Object
+		}
+		// TODO: Shouldn't there be a property userid?
     },
     observers: [
 		//userid and groupid known from login-element
@@ -96,6 +100,7 @@ Polymer({
 			self.me = self.userid?cow.users(self.userid):null;
 			if(!self.me) {
 				self.me = cow.users({_id:self.userid}).sync();
+				self.cow.user(self.userid); // TODO: Check with Tom if this is needed
 				self.msg = 'Created new user';
 				self.$.toast.open();
 			}
@@ -109,6 +114,13 @@ Polymer({
 			}
 		});
 
+	},
+	addPhoto: function(photoID){
+		if(!this.me)
+			return;
+		
+		// TODO
+		console.log('Photo added with ID: ' + photoID);
 	}
 
 });

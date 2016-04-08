@@ -95,7 +95,7 @@ paper-dialog.warning {
 
 	<carbon-location route="{{route}}"></carbon-location>
 
-	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
+	<cow-element id='cowelement' username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
 
 
@@ -266,10 +266,17 @@ Polymer({
 		xhr.open('POST', '/geodandag/uploadphoto', true);
 		
 		// Set up a handler for when the request finishes.
-		self = this;
+		var self = this;
 		xhr.onload = function () {
 			if (xhr.status === 200) {
 				self.status('Successfully uploaded photo.');
+				var pos = xhr.responseText.indexOf('{');
+				var response = JSON.parse(xhr.responseText.substr(pos));
+				var photoID = response.filename;
+				
+				// add the photo to cow to notify peers
+				var cowElement = self.$.cowelement;
+				cowElement.addPhoto(photoID);
 			} else {
 				self.status('Error uploading photo.');
 			}
