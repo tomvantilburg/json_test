@@ -1,9 +1,18 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<<<<<<< HEAD
 <link rel="import" href="./login-element.html">
 <link rel="import" href="./cow-element.html">
 
+=======
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link href="../bower_components/iron-icons/maps-icons.html" rel="import">
+<link href="../bower_components/iron-icons/image-icons.html" rel="import">
+>>>>>>> camera-stuff
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
 <script src="../bower_components/d3-plugins/geo/tile/tile.js"></script>
@@ -11,30 +20,62 @@
 
 <dom-module id="gmiddag-mobile">
 <style>
+#map {
+	height: 100%;
+	position: absolute;
+	overflow: hidden;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	top: 0px;
+}
+#content {
+	position: relative;
+	height: 100%;
+}
 
-	#map {
-		height: 100%;
-        position: absolute;
-        overflow: hidden;
-        left: 0px;
-        right: 0px;
-        bottom: 0px;
-        top: 0px;
-	}
-  #content {
-        position: relative;
-        height: 100%;
-    }
-    
-    #addphoto{
-    	position: absolute;
-    	bottom: 10px;
-    	right: 10px;
-    	z-index: 101;
-    }
+#mylocation{
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+	z-index: 101;
+}
+
+#camerabutton{
+	position: absolute;
+	bottom: 10px;
+	right: 10px;
+}
+
+#camerainput{
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	margin: 0;
+	padding: 0;
+	width: 50px;
+	height: 50px;
+	font-size: 20px;
+	cursor: pointer;
+	z-index: 105;
+	opacity: 0;
+	filter: alpha(opacity=0);
+}
+
+#spinner{
+	position: absolute;
+	top: 50%; left: 50%;
+	transform: translate(-50%,-50%);
+	z-index: 105;
+}
+
+#photopreview{
+	width: 200px;
+}
 </style>
 <template>
 <div id='content'>
+<<<<<<< HEAD
 	<paper-dialog modal id='logindialog' opened="[[!knownuser]]">
 		<h2>Login</h2>
 		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
@@ -51,15 +92,38 @@
     <paper-button dialog-confirm>Accept</paper-button>
   </div>
 	
+=======
+	<!--<cow-element userfeatures='[[smurfen]]'></cow-element>-->
+	<paper-dialog modal id="loginDialog" opened="[[loginDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<h2>Inloggen</h2>
+		<paper-input label="Naam" required auto-validate allowed-pattern="[a-z A-Z 0-9]" maxlength="12"></paper-input>
+		<paper-input label="Leeftijd" type="number" min="12" max="99"></paper-input>
+		<div class="buttons">
+			<paper-button dialog-confirm>Start!</paper-button>
+		</div>
+>>>>>>> camera-stuff
 	</paper-dialog>
 	<div id='map'></div>
-	<paper-fab id="addphoto" toggles active="{{takephoto}}" icon="add"></paper-fab>
+	<paper-fab mini id="mylocation" toggles active="{{loginDialog}}" icon="maps:my-location"></paper-fab>
+	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
+	<paper-spinner id="spinner"></paper-spinner><br>
+	<form is="iron-form" id="form" method="post" action="/form/handler">
+		<input type="file" id="camerainput" accept="image/*" capture="camera" on-change="previewFile"/>
+		<paper-dialog modal id="photoDialog" opened="[[photoDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+			<img id="photopreview" src="" alt="">
+			<div class="buttons">
+				<paper-button dialog-dismiss>Cancel</paper-button>&nbsp;
+				<paper-button dialog-confirm>Submit</paper-button>
+			</div>
+		</paper-dialog>
+	</form>
 </div>
 </template>
 </dom-module>
 
 <script>
 Polymer({
+<<<<<<< HEAD
     is: 'gmiddag-mobile',
     properties: {
     	map: {
@@ -79,6 +143,25 @@ Polymer({
     },
     ready:function(){
     	this.map = new d3.mappu.Map('map', {
+=======
+	is: 'gmiddag-mobile',
+	properties: {
+		map: {
+			type: Object,
+			notify: true
+		},
+		smurfen: {
+			observer: '_usersChanged'
+		},
+		photoDialog: false,
+		photoPreview: ''
+	},
+	_usersChanged: function(users){
+		this.userLayer.data = users;
+	},
+	ready:function(){
+		this.map = new d3.mappu.Map('map', {
+>>>>>>> camera-stuff
 					//center: [-118.184051,33.999622],
 					center: [4.90,52.36],
 					zoom: 22,
@@ -104,9 +187,39 @@ Polymer({
 			}).addTo(this.map);
 		
 			
-    },
-    attached: function(){
-    	this.map.resize();
-    }
+	},
+	
+	attached: function(){
+		this.map.resize();
+	},
+	
+	previewFile: function() {
+		var preview = this.$.photopreview;
+		var file = this.$.camerainput.files[0];
+		var spinner = this.$.spinner;
+		var reader = new FileReader();
+
+		spinner.active = true;
+		var self = this;
+		reader.onloadend = function () {
+			preview.src = reader.result;
+			preview.onload = function() {
+				spinner.active = false;
+				self.photoDialog = true;
+			}
+		}
+		reader.onerror = function () {
+			spinner.active = false;
+			preview.src = '';
+			preview.alt = 'Error loading image';
+			self.photoDialog = true;
+		}
+		
+		if (file) {
+			reader.readAsDataURL(file);
+		} else {
+			self.photoPreview = '';
+		}
+	}
 });
 </script>
