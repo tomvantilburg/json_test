@@ -102,13 +102,13 @@
 	<paper-fab mini id="mylocation" on-click="" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-spinner id="spinner"></paper-spinner><br>
-	<form is="iron-form" id="photoForm" method="post" content-type="application/x-www-form-urlencoded" action="https://saturnus.geodan.nl/geodandag/uploadphoto">
+	<form is="iron-form" id="photoForm" method="post" content-type="multipart/form-data" action="https://saturnus.geodan.nl/geodandag/uploadphoto">
 		<input type="file" required id="camerainput" accept="image/*" capture="camera" on-change="previewFile"/>
 		<paper-dialog modal id="photoDialog" opened="[[photoDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-			<img id="photopreview" src="" alt="">
+			<img id="photopreview" src="">
 			<div class="buttons">
 				<paper-button dialog-dismiss>Cancel</paper-button>&nbsp;
-				<paper-button dialog-confirm on-click="uploadPhoto">Submit</paper-button>
+				<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
 			</div>
 		</paper-dialog>
 	</form>
@@ -225,13 +225,20 @@ Polymer({
 		}
 	},
 
-	uploadPhoto: function(){
-		return;
+	submitPhoto: function(){
 		var photoForm = this.$.photoForm;
 		if(photoForm.validate()){
+			photoForm.addEventListener('iron-form-response', function(event) {
+				requestElement = event.detail;
+				console.log(requestElement);
+			});
+			photoForm.addEventListener('iron-form-error', function(event) {
+				requestElement = event.detail;
+				console.log(requestElement);
+			});
 			photoForm.submit();
 		} else {
-
+			this.status('Please select a photo.')
 		}
 	},
 
