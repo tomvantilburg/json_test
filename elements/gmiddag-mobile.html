@@ -1,18 +1,14 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
-<<<<<<< HEAD
-<link rel="import" href="./login-element.html">
-<link rel="import" href="./cow-element.html">
-
-=======
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+<link rel="import" href="./login-element.html">
+<link rel="import" href="./cow-element.html">
 <link href="../bower_components/iron-icons/maps-icons.html" rel="import">
 <link href="../bower_components/iron-icons/image-icons.html" rel="import">
->>>>>>> camera-stuff
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
 <script src="../bower_components/d3-plugins/geo/tile/tile.js"></script>
@@ -75,34 +71,11 @@
 </style>
 <template>
 <div id='content'>
-<<<<<<< HEAD
-	<paper-dialog modal id='logindialog' opened="[[!knownuser]]">
+	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
 		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
 	</paper-dialog>
-	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[smurfen]]'></cow-element>
-	
-	<paper-dialog opened="[[takephoto]]">
-	<h2>Foto</h2>
-  <paper-dialog-scrollable>
-    Hier komt de foto interface
-  </paper-dialog-scrollable>
-  <div class="buttons">
-    <paper-button dialog-dismiss>Cancel</paper-button>
-    <paper-button dialog-confirm>Accept</paper-button>
-  </div>
-	
-=======
-	<!--<cow-element userfeatures='[[smurfen]]'></cow-element>-->
-	<paper-dialog modal id="loginDialog" opened="[[loginDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-		<h2>Inloggen</h2>
-		<paper-input label="Naam" required auto-validate allowed-pattern="[a-z A-Z 0-9]" maxlength="12"></paper-input>
-		<paper-input label="Leeftijd" type="number" min="12" max="99"></paper-input>
-		<div class="buttons">
-			<paper-button dialog-confirm>Start!</paper-button>
-		</div>
->>>>>>> camera-stuff
-	</paper-dialog>
+	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[userfeatures]]'></cow-element>
 	<div id='map'></div>
 	<paper-fab mini id="mylocation" toggles active="{{loginDialog}}" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
@@ -123,35 +96,17 @@
 
 <script>
 Polymer({
-<<<<<<< HEAD
-    is: 'gmiddag-mobile',
-    properties: {
-    	map: {
-    		type: Object,
-    		notify: true
-    	},
-    	smurfen: {
-    		observer: '_usersChanged'
-    	},
-    	takephoto: false,
-    	knownuser: {
-    		value: false
-    	}
-    },
-    _usersChanged: function(users){
-    	this.userLayer.data = users;
-    },
-    ready:function(){
-    	this.map = new d3.mappu.Map('map', {
-=======
 	is: 'gmiddag-mobile',
 	properties: {
 		map: {
 			type: Object,
 			notify: true
 		},
-		smurfen: {
+		userfeatures: {
 			observer: '_usersChanged'
+		},
+		knownuser: {
+			value: false
 		},
 		photoDialog: false,
 		photoPreview: ''
@@ -161,8 +116,6 @@ Polymer({
 	},
 	ready:function(){
 		this.map = new d3.mappu.Map('map', {
->>>>>>> camera-stuff
-					//center: [-118.184051,33.999622],
 					center: [4.90,52.36],
 					zoom: 22,
 					minZoom: 10,
