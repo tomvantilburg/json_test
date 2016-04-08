@@ -8,7 +8,9 @@
 
 </style>
 <template>
-	<paper-input id="username"></paper-input>
+	<paper-input id="username" label="Naam" required auto-validate error-message="invullen svp"></paper-input>
+	<paper-input id="age" label="leeftijd" required auto-validate error-message="invullen svp" type="number"></paper-input>
+
 	<paper-button on-click='submit'>Login</paper-button>
 </template>
 </dom-module>
@@ -25,6 +27,10 @@ Polymer({
     		type: String,
     		notify: true,
     	},
+		age: {
+			type: Number,
+			notify: true
+		},
     	groupid: {
     		type: String,
     		notify: true,
