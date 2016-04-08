@@ -23,8 +23,6 @@ Polymer({
     		type: 'string',
     		notify: true
     	},
-
-
     	userfeatures: {
     		type: Array,
     		value: function(){return []},
@@ -36,7 +34,8 @@ Polymer({
     		observer: '_curposChanged'
     	},
     	me: {
-    		type: Object
+    		type: Object,
+			notify: true
     	}
     },
     observers: [
@@ -56,7 +55,7 @@ Polymer({
 		var cowUser;
 		var lastPos;
 		var lastTime = new Date().getTime();
-
+		var self = this;
 
 		//Create core object
 		var cow = new Cow.core({herdname: COW_HERDNAME});
@@ -76,7 +75,7 @@ Polymer({
 
 		cow.userStore().on('datachange', function(){
 			var users = cow.users();
-			this.userfeatures = users.filter(function(d){
+			self.userfeatures = users.filter(function(d){
 					return !d.deleted() && d.data('name') && d.data('location');
 			}).map(function(d){
 				return {

@@ -3,6 +3,7 @@
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="./login-element.html">
 <link rel="import" href="./cow-element.html">
+<link rel="import" href="./geopos-element.html">
 
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
@@ -39,8 +40,8 @@
 		<h2>Login</h2>
 		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
 	</paper-dialog>
-	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[smurfen]]'></cow-element>
-
+	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{smurfen}}' me='{{me}}'></cow-element>
+	<geopos-element curposition='{{curpos}}'></geopos-element>
 	<paper-dialog opened="[[takephoto]]">
 	<h2>Foto</h2>
   <paper-dialog-scrollable>
@@ -67,39 +68,54 @@ Polymer({
     		notify: true
     	},
     	smurfen: {
-    		observer: '_usersChanged'
+    		type: Array
     	},
-    	takephoto: false
-
+    	takephoto: false,
+		curpos: {
+			type: Array
+		},
+		me: {
+			type: Object
+		}
     },
+	observers: [
+		'_curposChanged(curpos,map, me)',
+		'_usersChanged(smurfen,userLayer)'
+	],
     _usersChanged: function(users){
     	this.userLayer.data = users;
     },
+	_curposChanged: function(pos,map,me){
+		map.center = pos;
+		map.redraw();
+		me.data('location', pos).sync();
+		//TODO: add speed and totalDistance
+	},
     ready:function(){
     	this.map = new d3.mappu.Map('map', {
-					//center: [-118.184051,33.999622],
-					center: [4.90,52.36],
-					zoom: 22,
-					minZoom: 10,
-					maxZoom: 30,
-					projection: d3.geo.mercator()
-			});
+				//center: [-118.184051,33.999622],
+				center: [4.90,52.36],
+				zoom: 22,
+				minZoom: 10,
+				maxZoom: 30,
+				projection: d3.geo.mercator()
+		});
 
-			var layer = new d3.mappu.RasterLayer('layer1', {
-				ogc_type: 'tms',
-				url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-				opacity: 1
-			}).addTo(this.map);
+		var layer = new d3.mappu.RasterLayer('layer1', {
+			ogc_type: 'tms',
+			url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+			opacity: 1
+		}).addTo(this.map);
 
-			userLayer = new d3.mappu.VectorLayer('userLayer',{
-				reproject: true,
-				duration: 1000,
-				labelStyle: {
-					fill: 'steelBlue',
-					stroke: 'steelBlue'
-				},
-				labelfield: 'name'
-			}).addTo(this.map);
+		this.userLayer = new d3.mappu.VectorLayer('userLayer',{
+			reproject: true,
+			duration: 1000,
+			labelStyle: {
+				fill: 'steelBlue',
+				stroke: 'steelBlue'
+			},
+			labelfield: 'name'
+		}).addTo(this.map);
 
 
     },
