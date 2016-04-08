@@ -69,7 +69,8 @@ Polymer({
 		cow.userStore().on('datachange', function(){
 			var users = cow.users();
 			self.userfeatures = users.filter(function(d){
-					return !d.deleted() && d.data('name') && d.data('location');
+				var maxage = new Date().getTime() - (1000 * 60 * 60 * 0.5); //not older than 1/2 hour
+				return !d.deleted() && d.data('name') && d.data('location') && d.updated() > maxage;
 			}).map(function(d){
 				return {
 					id: d.id(),

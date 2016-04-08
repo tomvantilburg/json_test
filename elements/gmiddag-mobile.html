@@ -80,7 +80,7 @@
 		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
 	</paper-dialog>
 
-	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[userfeatures]]' me='{{me}}'></cow-element>
+	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
 <!--
 	<paper-dialog opened="[[takephoto]]">
@@ -126,7 +126,7 @@ Polymer({
 			type: Array
 		},
 		knownuser: {
-			value: false
+			type: Boolean
 		},
 		photoDialog: false,
 		photoPreview: '',
@@ -139,7 +139,7 @@ Polymer({
 	},
 	observers: [
 		'_curposChanged(curpos,map, me)',
-		'_usersChanged(smurfen,userLayer)'
+		'_usersChanged(userfeatures,userLayer)'
 	],
 	_usersChanged: function(users){
 		this.userLayer.data = users;
