@@ -1,12 +1,14 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="./login-element.html">
+<link rel="import" href="./cow-element.html">
+
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
 <script src="../bower_components/d3-plugins/geo/tile/tile.js"></script>
 <script src="../bower_components/d3.mappu/dist/d3.mappu.js"></script>
-<script src="../bower_components/underscore/underscore-min.js"></script>
-<script src="../bower_components/cow/dist/cow.js"></script>
+
 <dom-module id="gmiddag-mobile">
 <style>
 
@@ -33,8 +35,13 @@
 </style>
 <template>
 <div id='content'>
+	<paper-dialog modal id='logindialog' opened="[[!knownuser]]">
+		<h2>Login</h2>
+		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
+	</paper-dialog>
+	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[smurfen]]'></cow-element>
+	
 	<paper-dialog opened="[[takephoto]]">
-	<!--<cow-element userfeatures='[[smurfen]]'></cow-element>-->
 	<h2>Foto</h2>
   <paper-dialog-scrollable>
     Hier komt de foto interface
@@ -62,7 +69,10 @@ Polymer({
     	smurfen: {
     		observer: '_usersChanged'
     	},
-    	takephoto: false
+    	takephoto: false,
+    	knownuser: {
+    		value: false
+    	}
     },
     _usersChanged: function(users){
     	this.userLayer.data = users;

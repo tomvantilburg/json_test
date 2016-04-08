@@ -1,0 +1,69 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+
+
+<dom-module id="login-element">
+<style>
+
+</style>
+<template>
+	<paper-input id="username"></paper-input>
+	<paper-button on-click='submit'>Login</paper-button>
+</template>
+</dom-module>
+
+<script>
+Polymer({
+    is: 'login-element',
+    properties: {
+    	userid: {
+    		type: String,
+    		notify: true
+    	},
+    	username: {
+    		type: String,
+    		notify: true,
+    	},
+    	groupid: {
+    		type: String,
+    		notify: true,
+    		value: 'test'//TODO
+    	},
+    	knownuser:{
+    		notify: true
+    	}
+    },
+    ready:function(){
+    	//TODO: get groupid from url
+    	
+    	this.userid = getCookie('cowID');
+    	if (this.userid){
+    		this.knownuser = true;
+    	}
+			function getCookie(cname) {
+				var name = cname + "=";
+				var ca = document.cookie.split(';');
+				for(var i=0; i<ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0)==' ') c = c.substring(1);
+					if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+				}
+				return "";
+			}
+			
+    },
+    submit: function(){
+    	this.userid = new Date().getTime().toString();
+    	this.username = this.$.username.value;
+    	this.knownuser = true;
+    	function setCookie(cname, cvalue, exdays) {
+				var d = new Date();
+				d.setTime(d.getTime() + (exdays*24*60*60*1000));
+				var expires = "expires="+d.toUTCString();
+				document.cookie = cname + "=" + cvalue + "; " + expires;
+			}
+			setCookie('cowID', this.userid, 1);
+    }
+});
+</script>

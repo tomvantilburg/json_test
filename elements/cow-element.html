@@ -1,12 +1,16 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 
 <script src="../bower_components/underscore/underscore-min.js"></script>
 <script src="../bower_components/cow/dist/cow.js"></script>
 <dom-module id="cow-element">
 <style>
-
+#toast {
+	z-index: 101;
+}
 </style>
 <template>
+	<paper-toast id='toast' text="{{msg}}"></paper-toast>
 </template>
 </dom-module>
 
@@ -14,109 +18,112 @@
 Polymer({
     is: 'cow-element',
     properties: {
+    	username: {
+    		type: 'string',
+    		notify: true
+    	},
+    	groupid: 'string',
+    	userid: 'string',
     	userfeatures: {
     		type: Array,
+    		value: function(){return []},
     		notify: true,
     		readonly: true
     	},
-    	
-
+    	curposition:{
+    		type: Object,
+    		observer: '_curposChanged'
+    	},
+    	me: {
+    		type: Object
+    	}
     },
-    ready:function(){
+    observers: [
+    	'connect(userid, groupid)'
+    ],
+    _curposChanged: function(pos){
+    	//TODO: update my user location
+    },
+    connect:function(userid, usergroup){
     	//constants
-			this.COW_HERDNAME = 'geodanmiddag2016';
-			this.COW_IP = 'websocket.geodan.nl';
-			this.COW_PROTO = 'wss';
-			this.COW_PORT = 443;
+			var COW_HERDNAME = 'geodanmiddag2016';
+			var COW_IP = 'websocket.geodan.nl';
+			var COW_PROTO = 'wss';
+			var COW_PORT = 443;
 			
-			var userFeatures = [];
-			var cowID;
 			var cowUser;
 			var lastPos;
 			var lastTime = new Date().getTime();
 			
+			
 			//Create core object
 			var cow = new Cow.core({herdname: COW_HERDNAME});
-			
 			//add a default socketserver
 			cow.socketservers({
-				_id: 'default', 
-				data: {
-					protocol: this.COW_PROTO,
-					ip: this.COW_IP, 
-					port: this.COW_PORT,
-					dir: this.COW_HERDNAME
-				}
-		});
-		cow.socketserver('default');
+					_id: 'default', 
+					data: {
+						protocol: COW_PROTO,
+						ip: COW_IP, 
+						port: COW_PORT,
+						dir: COW_HERDNAME
+					}
+			});
+			cow.socketserver('default');
 		
-		cow.userStore().on('datachange', function(){ 
-			var users = cow.users();
-			this.userFeatures = [];
-			users.forEach( function(d, i){
-				if (!d.data('name') || !d.data('location'))
-					return;
-				this.userFeatures.push({
-					id: d.id(),
-					type: 'Feature',
-					geometry: {type: 'Point', coordinates: d.data('location')},
-					properties: {name: d.data('name')}
+			cow.userStore().on('datachange', function(){ 
+				var users = cow.users();
+				this.userfeatures = users.filter(function(d){
+						return !d.deleted() && d.data('name') && d.data('location');
+				}).map(function(d){
+					return {
+						id: d.id(),
+						type: 'Feature',
+						geometry: {type: 'Point', coordinates: d.data('location')},
+						properties: {name: d.data('name')}
+					};
 				});
 			});
-			if(this.userFeatures.length > 0)
-				//TODO userLayer.data = userFeatures;
-		});		
-		
-		var connection;
-		cow.connect().then(function(d){
-			connection = d;
-			cow.userStore().loaded.then(function(){
-				cowID = getCookie('cowID');
-				if(cowID) {
-					cowUser = cow.users(cowID);
-					if(!cowUser) 
+			var self = this;
+			var connection;
+			cow.connect().then(function(d){
+					self.msg = 'Connected';
+					self.$.toast.open();
+				connection = d;
+				cow.userStore().loaded.then(function(){
+					cowUser = userid?cow.users(userid):null;
+					if(!cowUser) {
+							makeCowUser();
+					}
+					else if(cowUser.data('name')){
+							//TODO document.getElementById('login-container').style.display = 'none';
+					} else {
 						makeCowUser();
-					else if(cowUser.data('name'))
-						document.getElementById('login-container').style.display = 'none';
-				} else {
-					makeCowUser();
-				}
-				document.getElementById("startbutton").disabled = false;
+					}
+					//TODO document.getElementById("startbutton").disabled = false;
+				});
+			}, function(e){
+				console.warn('Connection error: ' + e);
 			});
-		
-			navigator.geolocation.getCurrentPosition(updatePosition);
-			setInterval(function(){ 
-					navigator.geolocation.getCurrentPosition(updatePosition);
-				}, 10000);
-		}, function(e){
-			setStatus('Connection error: ' + e);
-		});
 			
-    },
-    attached: function(){
-    	
-    },
-		makeCowUser: function(){
-			this.cowUser = cow.users({}).sync();
-			this.cowID = cowUser.id();
-			setCookie('cowID', cowID, 1);
-		},
-		setStatus: function(status) {
-			//TODO
-			//document.getElementById('mainstatus').innerHTML = status;
-			//document.getElementById('loginstatus').innerHTML = status;
-		},
-		login: function() {
-			//TODO var userName = document.getElementById("inputName").value
-			//TODO var userAge = parseInt(document.getElementById("inputAge").value)
-			if(userName.length < 2) {
-				//TODO alert('Naam moet minimaal twee letters lang zijn.');
-				return;
+			function makeCowUser(){
+				cowUser = cow.users({_id:self.userid})//.sync();
+				self.msg = 'Created new user';
+				self.$.toast.open();
+				//userid = cowUser.id();
+				
 			}
-			//TODO document.getElementById('login-container').style.display = 'none';
-			cowUser.data('name', userName);
-		}
-		
-		
+			function login() {
+				//TODO var userName = document.getElementById("inputName").value
+				//TODO var userAge = parseInt(document.getElementById("inputAge").value)
+				if(userName.length < 2) {
+					//TODO alert('Naam moet minimaal twee letters lang zijn.');
+					return;
+				}
+				//TODO document.getElementById('login-container').style.display = 'none';
+				cowUser.data('name', userName);
+			}
+			
+			
+    }//end of ready
 });
 </script>
