@@ -7,7 +7,7 @@
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
-<link rel="import" href="../bower_components/carbon-location/carbon-location.html">
+<link rel="import" href="../bower_components/carbon-route/carbon-location.html">
 <link rel="import" href="../bower_components/carbon-route/carbon-route.html">
 <link href="../bower_components/iron-icons/maps-icons.html" rel="import">
 <link href="../bower_components/iron-icons/image-icons.html" rel="import">
@@ -79,6 +79,9 @@
 #toast {
 	z-index: 101;
 }
+paper-toolbar {
+	z-index: 1001;
+}
 
 </style>
 <template>
@@ -89,10 +92,11 @@
 	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
 
-<paper-toolbar>
-	<div class="title">{{groupdata}}</div>
-</paper-toolbar>
+
 <div id='content'>
+	<paper-toolbar>
+		<div class="title">{{groupsRoute.path}}</div>
+	</paper-toolbar>
 	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
 		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
