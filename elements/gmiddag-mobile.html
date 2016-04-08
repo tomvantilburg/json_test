@@ -5,10 +5,13 @@
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
-<link rel="import" href="./login-element.html">
-<link rel="import" href="./cow-element.html">
 <link href="../bower_components/iron-icons/maps-icons.html" rel="import">
 <link href="../bower_components/iron-icons/image-icons.html" rel="import">
+
+<link rel="import" href="./login-element.html">
+<link rel="import" href="./cow-element.html">
+<link rel="import" href="./geopos-element.html">
+
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
 <script src="../bower_components/d3-plugins/geo/tile/tile.js"></script>
@@ -68,6 +71,7 @@
 #photopreview{
 	width: 200px;
 }
+
 </style>
 <template>
 <div id='content'>
@@ -75,7 +79,23 @@
 		<h2>Login</h2>
 		<login-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
 	</paper-dialog>
-	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[userfeatures]]'></cow-element>
+
+	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='[[userfeatures]]' me='{{me}}'></cow-element>
+	<geopos-element curposition='{{curpos}}'></geopos-element>
+<!--
+	<paper-dialog opened="[[takephoto]]">
+	<h2>Foto</h2>
+  <paper-dialog-scrollable>
+    Hier komt de foto interface
+  </paper-dialog-scrollable>
+  <div class="buttons">
+    <paper-button dialog-dismiss>Cancel</paper-button>
+    <paper-button dialog-confirm>Accept</paper-button>
+  </div>
+
+	</paper-dialog>
+-->
+
 	<div id='map'></div>
 	<paper-fab mini id="mylocation" toggles active="{{loginDialog}}" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
@@ -103,16 +123,32 @@ Polymer({
 			notify: true
 		},
 		userfeatures: {
-			observer: '_usersChanged'
+			type: Array
 		},
 		knownuser: {
 			value: false
 		},
 		photoDialog: false,
-		photoPreview: ''
+		photoPreview: '',
+		curpos: {
+			type: Array
+		},
+		me: {
+			type: Object
+		}
 	},
+	observers: [
+		'_curposChanged(curpos,map, me)',
+		'_usersChanged(smurfen,userLayer)'
+	],
 	_usersChanged: function(users){
 		this.userLayer.data = users;
+	},
+	_curposChanged: function(pos,map,me){
+		map.center = pos;
+		map.redraw();
+		me.data('location', pos).sync();
+		//TODO: add speed and totalDistance
 	},
 	ready:function(){
 		this.map = new d3.mappu.Map('map', {
@@ -122,14 +158,14 @@ Polymer({
 					maxZoom: 30,
 					projection: d3.geo.mercator()
 			});
-		
+
 			var layer = new d3.mappu.RasterLayer('layer1', {
 				ogc_type: 'tms',
 				url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
 				opacity: 1
 			}).addTo(this.map);
-		
-			userLayer = new d3.mappu.VectorLayer('userLayer',{
+
+			this.userLayer = new d3.mappu.VectorLayer('userLayer',{
 				reproject: true,
 				duration: 1000,
 				labelStyle: {
@@ -138,14 +174,14 @@ Polymer({
 				},
 				labelfield: 'name'
 			}).addTo(this.map);
-		
-			
+
+
 	},
-	
+
 	attached: function(){
 		this.map.resize();
 	},
-	
+
 	previewFile: function() {
 		var preview = this.$.photopreview;
 		var file = this.$.camerainput.files[0];
@@ -167,12 +203,13 @@ Polymer({
 			preview.alt = 'Error loading image';
 			self.photoDialog = true;
 		}
-		
+
 		if (file) {
 			reader.readAsDataURL(file);
 		} else {
 			self.photoPreview = '';
 		}
 	}
+
 });
 </script>

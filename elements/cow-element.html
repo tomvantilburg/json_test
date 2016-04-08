@@ -15,6 +15,7 @@
 </dom-module>
 
 <script>
+var cow;//for debug
 Polymer({
     is: 'cow-element',
     properties: {
@@ -22,108 +23,92 @@ Polymer({
     		type: 'string',
     		notify: true
     	},
-    	groupid: 'string',
-    	userid: 'string',
     	userfeatures: {
     		type: Array,
     		value: function(){return []},
     		notify: true,
     		readonly: true
     	},
-    	curposition:{
-    		type: Object,
-    		observer: '_curposChanged'
-    	},
     	me: {
-    		type: Object
+    		type: Object,
+			notify: true
     	}
     },
     observers: [
-    	'connect(userid, groupid)'
+		//userid and groupid known from login-element
+    	'login(userid, groupid)'
     ],
-    _curposChanged: function(pos){
-    	//TODO: update my user location
-    },
-    connect:function(userid, usergroup){
+    ready:function(userid, usergroup){
     	//constants
-			var COW_HERDNAME = 'geodanmiddag2016';
-			var COW_IP = 'websocket.geodan.nl';
-			var COW_PROTO = 'wss';
-			var COW_PORT = 443;
-			
-			var cowUser;
-			var lastPos;
-			var lastTime = new Date().getTime();
-			
-			
-			//Create core object
-			var cow = new Cow.core({herdname: COW_HERDNAME});
-			//add a default socketserver
-			cow.socketservers({
-					_id: 'default', 
-					data: {
-						protocol: COW_PROTO,
-						ip: COW_IP, 
-						port: COW_PORT,
-						dir: COW_HERDNAME
-					}
+		var COW_HERDNAME = 'geodanmiddag2016';
+		var COW_IP = 'saturnus.geodan.nl';
+		var COW_PROTO = 'wss';
+		var COW_PORT = 443;
+
+		var cowUser;
+		var lastPos;
+		var lastTime = new Date().getTime();
+		var self = this;
+
+		//Create core object
+		var cow = new Cow.core({herdname: COW_HERDNAME});
+		window.cow = cow;//for debug
+		this.cow = cow;
+		//add a default socketserver
+		cow.socketservers({
+				_id: 'default',
+				data: {
+					protocol: COW_PROTO,
+					ip: COW_IP,
+					port: COW_PORT,
+					dir: COW_HERDNAME
+				}
+		});
+		cow.socketserver('default');
+
+		cow.userStore().on('datachange', function(){
+			var users = cow.users();
+			self.userfeatures = users.filter(function(d){
+					return !d.deleted() && d.data('name') && d.data('location');
+			}).map(function(d){
+				return {
+					id: d.id(),
+					type: 'Feature',
+					geometry: {type: 'Point', coordinates: d.data('location')},
+					properties: {name: d.data('name')}
+				};
 			});
-			cow.socketserver('default');
-		
-			cow.userStore().on('datachange', function(){ 
-				var users = cow.users();
-				this.userfeatures = users.filter(function(d){
-						return !d.deleted() && d.data('name') && d.data('location');
-				}).map(function(d){
-					return {
-						id: d.id(),
-						type: 'Feature',
-						geometry: {type: 'Point', coordinates: d.data('location')},
-						properties: {name: d.data('name')}
-					};
-				});
-			});
-			var self = this;
-			var connection;
-			cow.connect().then(function(d){
-					self.msg = 'Connected';
-					self.$.toast.open();
-				connection = d;
-				cow.userStore().loaded.then(function(){
-					cowUser = userid?cow.users(userid):null;
-					if(!cowUser) {
-							makeCowUser();
-					}
-					else if(cowUser.data('name')){
-							//TODO document.getElementById('login-container').style.display = 'none';
-					} else {
-						makeCowUser();
-					}
-					//TODO document.getElementById("startbutton").disabled = false;
-				});
-			}, function(e){
-				console.warn('Connection error: ' + e);
-			});
-			
-			function makeCowUser(){
-				cowUser = cow.users({_id:self.userid})//.sync();
+		});
+		var self = this;
+		var connection;
+		cow.connect().then(function(d){
+			this.connection = d;
+		});
+	}, //end of ready
+	login: function(){
+		var self = this;
+		var cow = this.cow;
+
+		//We have a userid from client, now see if it is known in cow
+		this.cow.userStore().loaded.then(function(){
+			//Do I exist?
+			self.me = self.userid?cow.users(self.userid):null;
+			if(!self.me) {
+				self.me = cow.users({_id:self.userid}).sync();
 				self.msg = 'Created new user';
 				self.$.toast.open();
-				//userid = cowUser.id();
-				
 			}
-			function login() {
-				//TODO var userName = document.getElementById("inputName").value
-				//TODO var userAge = parseInt(document.getElementById("inputAge").value)
-				if(userName.length < 2) {
-					//TODO alert('Naam moet minimaal twee letters lang zijn.');
-					return;
-				}
-				//TODO document.getElementById('login-container').style.display = 'none';
-				cowUser.data('name', userName);
+			//Is my name known?
+			if(self.username){
+				self.me.data('name', self.username).sync();
 			}
-			
-			
-    }//end of ready
+			else {
+				self.username = self.me.data('name');
+
+			}
+		});
+
+	}
+
 });
 </script>
