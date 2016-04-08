@@ -5,6 +5,7 @@
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
 <link rel="import" href="../bower_components/carbon-route/carbon-location.html">
@@ -106,8 +107,9 @@ paper-toolbar {
 	<paper-fab mini id="mylocation" on-click="" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-spinner id="spinner"></paper-spinner><br>
-	<form is="iron-form" id="photoForm" method="post" content-type="multipart/form-data" action="https://saturnus.geodan.nl/geodandag/uploadphoto">
-		<input type="file" required id="camerainput" accept="image/*" capture="camera" on-change="previewFile"/>
+	<paper-toast id="toast" text="{{msg}}"></paper-toast>
+	<form id="photoForm">
+		<input type="file" required id="camerainput" name="photo" accept="image/*" capture="camera" on-change="previewFile"/>
 		<paper-dialog modal id="photoDialog" opened="[[photoDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 			<img id="photopreview" src="">
 			<div class="buttons">
@@ -204,6 +206,8 @@ Polymer({
 	previewFile: function() {
 		var preview = this.$.photopreview;
 		var file = this.$.camerainput.files[0];
+		if(!file) return;
+		
 		var spinner = this.$.spinner;
 		var reader = new FileReader();
 
@@ -230,8 +234,38 @@ Polymer({
 	},
 
 	submitPhoto: function(){
-		var photoForm = this.$.photoForm;
+		var file = this.$.camerainput.files[0];
+		if(!file || !file.type.match('image.*')){
+			this.status('Please select a photo.');
+			return;
+		}
+		
+		var formData = new FormData();
+		// Add the file to the request.
+		formData.append('photo', file, file.name);
+		// Set up the request.
+		var xhr = new XMLHttpRequest();
+		// Open the connection.
+		xhr.open('POST', '/geodandag/uploadphoto', true);
+		
+		// Set up a handler for when the request finishes.
+		self = this;
+		xhr.onload = function () {
+			if (xhr.status === 200) {
+				self.status('Successfully uploaded photo.');
+			} else {
+				self.status('Error uploading photo.');
+			}
+		};
+		
+		xhr.send(formData);
+		
+		/*
 		if(photoForm.validate()){
+			photoForm.contentType = "application/x-www-form-urlencoded";
+			photoForm.addEventListener('iron-form-presubmit', function(event) {
+				photoForm.
+			});
 			photoForm.addEventListener('iron-form-response', function(event) {
 				requestElement = event.detail;
 				console.log(requestElement);
@@ -243,7 +277,7 @@ Polymer({
 			photoForm.submit();
 		} else {
 			this.status('Please select a photo.')
-		}
+		}*/
 	},
 
 	status: function(status){
