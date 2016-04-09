@@ -37,15 +37,15 @@
 	height: 100%;
 }
 
-#mylocation{
-	position: absolute;
+#locationbutton{
+	position: fixed;
 	bottom: 10px;
 	left: 10px;
 	z-index: 101;
 }
 
 #camerabutton{
-	position: absolute;
+	position: fixed;
 	bottom: 10px;
 	right: 10px;
 	z-index: 101;
@@ -114,16 +114,16 @@ paper-dialog.warning {
 	</paper-dialog>
 
 	<div id='map'></div>
-	<paper-fab mini id="mylocation" on-click="" icon="maps:my-location"></paper-fab>
+	<paper-fab mini id="locationbutton" on-click="" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-spinner id="spinner"></paper-spinner><br>
 	<paper-toast id="toast" text="{{msg}}"></paper-toast>
 	<form id="photoForm">
-		<input type="file" required id="camerainput" name="photo" accept="image/*" capture="camera" on-change="previewFile"/>
-		<paper-dialog modal id="photoDialog" opened="[[photoDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<input type="file" required id="camerainput" name="photo" accept="image/*" capture="camera" on-change="previewPhoto"/>
+		<paper-dialog modal id="photoDialog" opened="{{showPhotoDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 			<img id="photopreview" src="">
 			<div class="buttons">
-				<paper-button dialog-dismiss>Cancel</paper-button>&nbsp;
+				<paper-button dialog-dismiss on-click="resetForm">Cancel</paper-button>&nbsp;
 				<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
 			</div>
 		</paper-dialog>
@@ -152,8 +152,7 @@ Polymer({
 		me: {
 			type: Object
 		},
-		photoDialog: false,
-		photoPreview: '',
+		showPhotoDialog: false,
 		msg: '',
 		route: {
 			type: Object,
@@ -220,7 +219,7 @@ Polymer({
 		this.map.resize();
 	},
 
-	previewFile: function() {
+	previewPhoto: function() {
 		var preview = this.$.photopreview;
 		var file = this.$.camerainput.files[0];
 		if(!file) return;
@@ -234,19 +233,22 @@ Polymer({
 			preview.src = reader.result;
 			preview.onload = function() {
 				spinner.active = false;
-				self.photoDialog = true;
+				self.showPhotoDialog = true;
 			}
-		}
+		};
 		reader.onerror = function () {
 			spinner.active = false;
 			preview.src = '';
-			self.status('Error loading image');
-		}
+			self.status('Error loading image.');
+			self.resetForm();
+		};
 
 		if (file) {
 			reader.readAsDataURL(file);
 		} else {
-			self.photoPreview = '';
+			preview.src = '';
+			self.status('No image file selected.');
+			self.resetForm();
 		}
 	},
 
@@ -277,33 +279,24 @@ Polymer({
 				// add the photo to cow to notify peers
 				var cowElement = self.$.cowelement;
 				cowElement.addPhoto(photoID);
+				
+				// reset form after successful upload
+				self.resetForm();
 			} else {
 				self.status('Error uploading photo.');
+				// upload failed: preview the photo again, so the user can resubmit
+				self.previewPhoto();
 			}
 		};
 		
+		// send the ajax request
 		xhr.send(formData);
-		
-		/*
-		if(photoForm.validate()){
-			photoForm.contentType = "application/x-www-form-urlencoded";
-			photoForm.addEventListener('iron-form-presubmit', function(event) {
-				photoForm.
-			});
-			photoForm.addEventListener('iron-form-response', function(event) {
-				requestElement = event.detail;
-				console.log(requestElement);
-			});
-			photoForm.addEventListener('iron-form-error', function(event) {
-				requestElement = event.detail;
-				console.log(requestElement);
-			});
-			photoForm.submit();
-		} else {
-			this.status('Please select a photo.')
-		}*/
 	},
-
+	
+	resetForm: function(){
+		this.$.photoForm.reset();
+	},
+	
 	status: function(status){
 		this.msg = status;
 		this.$.toast.open();

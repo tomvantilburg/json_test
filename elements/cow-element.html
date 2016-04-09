@@ -35,6 +35,9 @@ Polymer({
     	},
 		cow: {  // TODO: Check with Tom if this is needed
 			type: Object
+		},
+		connection: {  // TODO: Check with Tom if this is needed
+			type: Object
 		}
 		// TODO: Shouldn't there be a property userid?
     },
@@ -85,9 +88,8 @@ Polymer({
 			});
 		});
 		var self = this;
-		var connection;
 		cow.connect().then(function(d){
-			this.connection = d;
+			self.connection = d;
 		});
 	}, //end of ready
 	login: function(){
