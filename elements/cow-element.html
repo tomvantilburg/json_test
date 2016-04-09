@@ -30,7 +30,7 @@ Polymer({
     		readonly: true
     	},
 		groupid: {
-			type: Number
+			type: String,
 		},
     	me: {
     		type: Object,
@@ -99,6 +99,10 @@ Polymer({
 		var self = this;
 		var cow = this.cow;
 
+		this.cow.projectStore().loaded.then(function(){
+			var project = cow.projects('geodanmiddag2016')?cow.projects('geodanmiddag2016'):cow.projects({_id:'geodanmiddag2016'}).sync();
+			self.project = project;
+		});
 		//We have a userid from client, now see if it is known in cow
 		this.cow.userStore().loaded.then(function(){
 			//Do I exist?
@@ -114,20 +118,23 @@ Polymer({
 				self.msg = 'Created new user';
 				self.$.toast.open();
 			}
-
-			if(self.username){
-				//self.me.data('name', self.username).sync();
-			}
-			else {
-				self.username = self.me.data('name');
-				self.groupid = self.me.data('groupid');
-			}
+			self.username = self.username || self.me.data('name');
+			self.groupid = self.groupid || self.me.data('group');
 		});
 
 	},
-	addPhoto: function(photoID, photoRating){
-		if(!this.me)
-			return;
+	addPhoto: function(photoID, photoRating,position){
+		if(this.project){
+			this.project.items({})
+				.data('type','photo')
+				.data('photoid',photoID)
+				.data('photorating',photoRating)
+				.data('user',this.username)
+				.data('group',this.groupid)
+				.data('location',position)
+				.sync();
+		}
+		return;
 
 		// TODO
 		console.log('Photo added with ID: ' + photoID + ', rating: ' + photoRating);

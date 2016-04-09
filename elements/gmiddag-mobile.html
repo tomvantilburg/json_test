@@ -308,7 +308,7 @@ Polymer({
 
 				// add the photo to cow to notify peers
 				var cowElement = self.$.cowelement;
-				cowElement.addPhoto(photoID, self.photoRating);
+				cowElement.addPhoto(photoID, self.photoRating, self.curpos);
 
 				// reset form after successful upload
 				self.resetForm();
