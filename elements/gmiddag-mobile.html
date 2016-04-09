@@ -5,6 +5,8 @@
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../bower_components/star-rating/star-rating.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
 
@@ -36,17 +38,18 @@
 	height: 100%;
 }
 
-#mylocation{
-	position: absolute;
+#locationbutton{
+	position: fixed;
 	bottom: 10px;
 	left: 10px;
 	z-index: 101;
 }
 
 #camerabutton{
-	position: absolute;
+	position: fixed;
 	bottom: 10px;
 	right: 10px;
+	z-index: 101;
 }
 
 #camerainput{
@@ -59,9 +62,9 @@
 	height: 50px;
 	font-size: 20px;
 	cursor: pointer;
-	z-index: 105;
 	opacity: 0;
 	filter: alpha(opacity=0);
+	z-index: 101;
 }
 
 #spinner{
@@ -78,12 +81,23 @@
 #toast {
 	z-index: 101;
 }
+
 paper-dialog.warning {
-      border: 2px solid;
-      border-color: var(--paper-orange-500);
-      background-color: var(--paper-light-orange-50);
-      color: var(--paper-orange-500);
-    }
+	width: 200px;
+	border: 2px solid;
+	border-color: var(--paper-orange-500);
+	background-color: var(--paper-light-orange-50);
+	color: var(--paper-orange-500);
+}
+
+star-rating {
+	display: block;
+	position: relative;
+	margin: -5px;
+	left: 10px;
+	color: #ff4081;
+}
+
 
 </style>
 <template>
@@ -91,7 +105,7 @@ paper-dialog.warning {
 
 	<carbon-location route="{{route}}"></carbon-location>
 
-	<cow-element username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
+	<cow-element id='cowelement' username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
 
 
@@ -110,16 +124,18 @@ paper-dialog.warning {
 	</paper-dialog>
 
 	<div id='map'></div>
-	<paper-fab mini id="mylocation" on-click="" icon="maps:my-location"></paper-fab>
+	<paper-fab mini id="locationbutton" on-click="" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-spinner id="spinner"></paper-spinner><br>
-	<form is="iron-form" id="photoForm" method="post" content-type="application/x-www-form-urlencoded" action="https://saturnus.geodan.nl/geodandag/uploadphoto">
-		<input type="file" required id="camerainput" accept="image/*" capture="camera" on-change="previewFile"/>
-		<paper-dialog modal id="photoDialog" opened="[[photoDialog]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-			<img id="photopreview" src="" alt="">
+	<paper-toast id="toast" text="{{msg}}"></paper-toast>
+	<form id="photoForm">
+		<input type="file" required id="camerainput" name="photo" accept="image/*" capture="camera" on-change="previewPhoto"/>
+		<paper-dialog modal id="photoDialog" opened="{{showPhotoDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+			<img id="photopreview" src="">
+			<star-rating id="starRating" stars="5" rate="{{photoRating}}"></star-rating>
 			<div class="buttons">
-				<paper-button dialog-dismiss>Cancel</paper-button>&nbsp;
-				<paper-button dialog-confirm on-click="uploadPhoto">Submit</paper-button>
+				<paper-button dialog-dismiss on-click="resetForm">Cancel</paper-button>&nbsp;
+				<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
 			</div>
 		</paper-dialog>
 	</form>
@@ -147,8 +163,8 @@ Polymer({
 		me: {
 			type: Object
 		},
-		photoDialog: false,
-		photoPreview: '',
+		showPhotoDialog: false,
+		photoRating: 0,
 		msg: '',
 		route: {
 			type: Object,
@@ -215,44 +231,85 @@ Polymer({
 		this.map.resize();
 	},
 
-	previewFile: function() {
+	previewPhoto: function() {
 		var preview = this.$.photopreview;
 		var file = this.$.camerainput.files[0];
+		if(!file) return;
+		
 		var spinner = this.$.spinner;
 		var reader = new FileReader();
 
+		this.photoRating = 0;
 		spinner.active = true;
 		var self = this;
 		reader.onloadend = function () {
 			preview.src = reader.result;
 			preview.onload = function() {
 				spinner.active = false;
-				self.photoDialog = true;
+				self.showPhotoDialog = true;
 			}
-		}
+		};
 		reader.onerror = function () {
 			spinner.active = false;
 			preview.src = '';
-			self.status('Error loading image');
-		}
+			self.status('Error loading image.');
+			self.resetForm();
+		};
 
 		if (file) {
 			reader.readAsDataURL(file);
 		} else {
-			self.photoPreview = '';
+			preview.src = '';
+			self.status('No image file selected.');
+			self.resetForm();
 		}
 	},
 
-	uploadPhoto: function(){
-		return;
-		var photoForm = this.$.photoForm;
-		if(photoForm.validate()){
-			photoForm.submit();
-		} else {
-
+	submitPhoto: function(){
+		var file = this.$.camerainput.files[0];
+		if(!file || !file.type.match('image.*')){
+			this.status('Please select a photo.');
+			return;
 		}
+		
+		var formData = new FormData();
+		// Add the file to the request.
+		formData.append('photo', file, file.name);
+		// Set up the request.
+		var xhr = new XMLHttpRequest();
+		// Open the connection.
+		xhr.open('POST', '/geodandag/uploadphoto', true);
+		
+		// Set up a handler for when the request finishes.
+		var self = this;
+		xhr.onload = function () {
+			if (xhr.status === 200) {
+				self.status('Successfully uploaded photo.');
+				var pos = xhr.responseText.indexOf('{');
+				var response = JSON.parse(xhr.responseText.substr(pos));
+				var photoID = response.filename;
+				
+				// add the photo to cow to notify peers
+				var cowElement = self.$.cowelement;
+				cowElement.addPhoto(photoID, self.photoRating);
+				
+				// reset form after successful upload
+				self.resetForm();
+			} else {
+				self.status('Error uploading photo.');
+				// upload failed: preview the photo again, so the user can resubmit
+				self.previewPhoto();
+			}
+		};
+		
+		// send the ajax request
+		xhr.send(formData);
 	},
-
+	
+	resetForm: function(){
+		this.$.photoForm.reset();
+	},
+	
 	status: function(status){
 		this.msg = status;
 		this.$.toast.open();
