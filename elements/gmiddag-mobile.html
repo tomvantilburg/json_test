@@ -6,6 +6,7 @@
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../bower_components/star-rating/star-rating.html">
 <link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
 
@@ -89,6 +90,15 @@ paper-dialog.warning {
 	color: var(--paper-orange-500);
 }
 
+star-rating {
+	display: block;
+	position: relative;
+	margin: -5px;
+	left: 10px;
+	color: #ff4081;
+}
+
+
 </style>
 <template>
 <!-- NON UI elements -->
@@ -122,6 +132,7 @@ paper-dialog.warning {
 		<input type="file" required id="camerainput" name="photo" accept="image/*" capture="camera" on-change="previewPhoto"/>
 		<paper-dialog modal id="photoDialog" opened="{{showPhotoDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 			<img id="photopreview" src="">
+			<star-rating id="starRating" stars="5" rate="{{photoRating}}"></star-rating>
 			<div class="buttons">
 				<paper-button dialog-dismiss on-click="resetForm">Cancel</paper-button>&nbsp;
 				<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
@@ -153,6 +164,7 @@ Polymer({
 			type: Object
 		},
 		showPhotoDialog: false,
+		photoRating: 0,
 		msg: '',
 		route: {
 			type: Object,
@@ -227,6 +239,7 @@ Polymer({
 		var spinner = this.$.spinner;
 		var reader = new FileReader();
 
+		this.photoRating = 0;
 		spinner.active = true;
 		var self = this;
 		reader.onloadend = function () {
@@ -278,7 +291,7 @@ Polymer({
 				
 				// add the photo to cow to notify peers
 				var cowElement = self.$.cowelement;
-				cowElement.addPhoto(photoID);
+				cowElement.addPhoto(photoID, self.photoRating);
 				
 				// reset form after successful upload
 				self.resetForm();
