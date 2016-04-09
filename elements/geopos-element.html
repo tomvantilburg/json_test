@@ -79,10 +79,16 @@ Polymer({
 			lastPos = curposition;
 			lastTime = curtime;
 		}
-
-		navigator.geolocation.getCurrentPosition(updatePosition);
+        function positionerror(e){
+            console.warn('Position error: ',e);
+        }
+        var navoptions = {
+            enableHighAccuracy:true,
+            timeout: 10000, //max poll for 10 secs
+        };
+		navigator.geolocation.getCurrentPosition(updatePosition,positionerror,navoptions);
 		setInterval(function(){
-			navigator.geolocation.getCurrentPosition(updatePosition);
+			navigator.geolocation.getCurrentPosition(updatePosition,positionerror,navoptions);
 		}, 10000);
 
     }

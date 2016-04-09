@@ -107,6 +107,8 @@ Polymer({
 				self.me = cow.users({_id:self.userid})
 					.data('name',self.username)
 					.data('group',self.groupid)
+					.data('age',self.age)
+					.data('sex',self.sex)
 					.sync();
 				self.cow.user(self.userid); // TODO: Check with Tom if this is needed
 				self.msg = 'Created new user';
