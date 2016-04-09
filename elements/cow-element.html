@@ -29,6 +29,9 @@ Polymer({
     		notify: true,
     		readonly: true
     	},
+		groupid: {
+			type: Number
+		},
     	me: {
     		type: Object,
 			notify: true
@@ -95,17 +98,20 @@ Polymer({
 			//Do I exist?
 			self.me = self.userid?cow.users(self.userid):null;
 			if(!self.me) {
-				self.me = cow.users({_id:self.userid}).sync();
+				self.me = cow.users({_id:self.userid})
+					.data('name',self.username)
+					.data('group',self.groupid)
+					.sync();
 				self.msg = 'Created new user';
 				self.$.toast.open();
 			}
-			//Is my name known?
+			
 			if(self.username){
-				self.me.data('name', self.username).sync();
+				//self.me.data('name', self.username).sync();
 			}
 			else {
 				self.username = self.me.data('name');
-
+				self.groupid = self.me.data('groupid');
 			}
 		});
 
