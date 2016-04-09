@@ -21,7 +21,8 @@
     "underscore": "^1.8.3",
     "iron-elements": "PolymerElements/iron-elements#^1.0.9",
     "paper-elements": "PolymerElements/paper-elements#^1.0.7",
-    "carbon-elements": "PolymerElements/carbon-elements#^0.1.0"
+    "carbon-elements": "PolymerElements/carbon-elements#^0.1.0",
+    "star-rating": "https://github.com/msuchecki/star-rating.git"
   },
   "resolutions": {
     "cow": "^2.2.3"
