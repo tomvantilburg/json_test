@@ -256,29 +256,12 @@ Polymer({
 		var spinner = this.$.spinner;
 		var reader = new FileReader();
 
-		this.photoRating = 0;
-		spinner.active = true;
 		var self = this;
-		reader.onloadend = function () {
-			preview.src = reader.result;
-			preview.onload = function() {
-				spinner.active = false;
-				self.showPhotoDialog = true;
-			}
-		};
-		reader.onerror = function () {
+		spinner.active = true;
+		preview.src = window.URL.createObjectURL(file);
+		preview.onload = function() {
 			spinner.active = false;
-			preview.src = '';
-			self.status('Error loading image.');
-			self.resetForm();
-		};
-
-		if (file) {
-			reader.readAsDataURL(file);
-		} else {
-			preview.src = '';
-			self.status('No image file selected.');
-			self.resetForm();
+			self.showPhotoDialog = true;
 		}
 	},
 
@@ -286,44 +269,153 @@ Polymer({
 		var file = this.$.camerainput.files[0];
 		if(!file || !file.type.match('image.*')){
 			this.status('Please select a photo.');
+			this.resetForm();
 			return;
 		}
-
-		var formData = new FormData();
-		// Add the file to the request.
-		formData.append('photo', file, file.name);
-		// Set up the request.
-		var xhr = new XMLHttpRequest();
-		// Open the connection.
-		xhr.open('POST', '/geodandag/uploadphoto', true);
-
-		// Set up a handler for when the request finishes.
 		var self = this;
-		xhr.onload = function () {
-			if (xhr.status === 200) {
-				self.status('Successfully uploaded photo.');
-				var pos = xhr.responseText.indexOf('{');
-				var response = JSON.parse(xhr.responseText.substr(pos));
-				var photoID = response.filename;
-
-				// add the photo to cow to notify peers
-				var cowElement = self.$.cowelement;
-				cowElement.addPhoto(photoID, self.photoRating, self.curpos);
-
-				// reset form after successful upload
-				self.resetForm();
-			} else {
-				self.status('Error uploading photo.');
-				// upload failed: preview the photo again, so the user can resubmit
-				self.previewPhoto();
+		var callback = function(success, response) {
+			if (!success) {
+				self.status(response);
+				self.previewPhoto(); // preview the photo again, so the user can resubmit
+				return;
 			}
-		};
 
-		// send the ajax request
-		xhr.send(formData);
+			var pos = response.indexOf('{');
+			if (pos === -1) {
+				self.status('Invalid server response.');
+				self.previewPhoto(); // preview the photo again, so the user can resubmit
+				return;
+			}
+
+			var responseJSON = JSON.parse(response.substr(pos));
+			var photoID = responseJSON.filename;
+			if (!photoID) {
+				self.status('Did not receive photo ID.');
+				self.previewPhoto(); // preview the photo again, so the user can resubmit
+				return;
+			}
+			
+			self.status('Successfully uploaded photo.');
+			// add the photo to cow to notify peers
+			var cowElement = self.$.cowelement;
+			cowElement.addPhoto(photoID, self.photoRating);
+			// reset form after successful upload
+			self.resetForm();
+		};
+		this.resizeAndUpload(file, 'photo', 1200, 1200, '/geodandag/uploadphoto', callback);
+	},
+	
+	resizeAndUpload: function(file, name, maxWidth, maxHeight, url, callback) {
+		var reader = new FileReader();
+		var self = this;
+		var tempImg = new Image();
+
+		tempImg.src = window.URL.createObjectURL(file);
+		tempImg.onload = function() {
+			var imgW = tempImg.width;
+			var imgH = tempImg.height;
+			var scale = Math.min(maxWidth / imgW, maxHeight / imgH, 1.0);
+			
+			// obtains EXIF orientation from file
+			var getOrientation = function (file, callback) {
+				var reader = new FileReader();
+				reader.onload = function(e) {
+					var view = new DataView(e.target.result);
+					if (view.getUint16(0, false) != 0xFFD8) return callback(-2);
+					var length = view.byteLength, offset = 2;
+					while (offset < length) {
+						var marker = view.getUint16(offset, false);
+						offset += 2;
+						if (marker == 0xFFE1) {
+							if (view.getUint32(offset += 2, false) != 0x45786966) return callback(-1);
+							var little = view.getUint16(offset += 6, false) == 0x4949;
+							offset += view.getUint32(offset + 4, little);
+							var tags = view.getUint16(offset, little);
+							offset += 2;
+							for (var i = 0; i < tags; i++)
+								if (view.getUint16(offset + (i * 12), little) == 0x0112)
+									return callback(view.getUint16(offset + (i * 12) + 8, little));
+						}
+						else if ((marker & 0xFF00) != 0xFF00) break;
+						else offset += view.getUint16(offset, false);
+					}
+					return callback(-1);
+				};
+				reader.readAsArrayBuffer(file.slice(0, 64 * 1024));
+			};
+			
+			getOrientation(file, function(orientation){
+				var formData = new FormData();
+				if (scale < 1.0) { // image needs to be scaled
+					imgW = imgW * scale;
+					imgH = imgH * scale;
+					
+					var canvas = document.createElement('canvas');
+					if (orientation < 5) {
+						canvas.width = imgW;
+						canvas.height = imgH;
+					} else {
+						canvas.width = imgH;
+						canvas.height = imgW;
+					}
+					var ctx = canvas.getContext("2d");
+					var transformations = {
+						1: 'ctx.transform(1, 0, 0, 1, 0, 0);',			// identity transform
+						2: 'ctx.transform(-1, 0, 0, 1, imgW, 0)', 		// horizontal flip
+						3: 'ctx.transform(-1, 0, 0, -1, imgW, imgH)',	// 180° rotate left
+						4: 'ctx.transform(1, 0, 0, -1, 0, imgH)',		// vertical flip
+						5: 'ctx.transform(0, 1, 1, 0, 0, 0)',			// vertical flip + 90 rotate right
+						6: 'ctx.transform(0, 1, -1, 0, imgH , 0)',		// 90° rotate right
+						7: 'ctx.transform(0, -1, -1, 0, imgH , imgW)',	// horizontal flip + 90 rotate right
+						8: 'ctx.transform(0, -1, 1, 0, 0, imgW)'		// 90° rotate left
+					}
+
+					if (transformations[orientation])
+						eval(transformations[orientation]);
+					ctx.drawImage(tempImg, 0, 0, imgW, imgH);
+					
+					dataURItoBlob = function (dataURI) {
+						// convert base64/URLEncoded data component to raw binary data held in a string
+						var byteString;
+						if (dataURI.split(',')[0].indexOf('base64') >= 0)
+							byteString = atob(dataURI.split(',')[1]);
+						else
+							byteString = unescape(dataURI.split(',')[1]);
+
+						// separate out the mime component
+						var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+						// write the bytes of the string to a typed array
+						var ia = new Uint8Array(byteString.length);
+						for (var i = 0; i < byteString.length; i++) {
+							ia[i] = byteString.charCodeAt(i);
+						}
+
+						return new Blob([ia], {type:mimeString});
+					};
+					
+					var dataBlob = dataURItoBlob(canvas.toDataURL("image/jpeg"));
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					formData.append('photo', dataBlob, file.name);
+				} else { // image doesn't need to be scaled
+					formData.append('photo', file, file.name);
+				}
+			
+				var xhr = new XMLHttpRequest();
+				xhr.onload = function () {
+					if (xhr.status === 200)
+						callback(true, xhr.responseText);
+					else
+						callback(false, 'Error uploading image.');
+				};
+				xhr.open('POST', url, true);
+				xhr.send(formData);
+			});
+		};
 	},
 
 	resetForm: function(){
+		this.photoRating = 0;
 		this.$.photoForm.reset();
 	},
 
