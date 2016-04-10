@@ -1,19 +1,33 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+
 <link rel="import" href="../bower_components/carbon-route/carbon-location.html">
 <link rel="import" href="../bower_components/carbon-route/carbon-route.html">
+
 
 <dom-module id="login-element">
 <style>
 
 </style>
 <template>
-
-	<paper-input id="username" label="Naam" required auto-validate error-message="invullen svp" type="text"></paper-input>
-	<paper-input id="age" label="leeftijd" required auto-validate error-message="invullen svp" type="number"></paper-input>
-
-	<paper-button on-click='submit'>Login</paper-button>
+	<p>
+	Welkom bij de geodanmiddag.
+	</p>
+	<paper-input id="username" value="{{name}}" label="Naam" required auto-validate error-message="invullen svp" type="text"></paper-input>
+	<paper-input id="age" value="{{age}}" label="leeftijd" required auto-validate error-message="invullen svp" type="number"></paper-input>
+	<paper-dropdown-menu value="{{sex}}" label="geslacht">
+	  <paper-menu class="dropdown-content">
+	    <paper-item>Man</paper-item>
+	    <paper-item>Vrouw</paper-item>
+	    <paper-item>Nee</paper-item>
+	    <paper-item>Anders</paper-item>
+	  </paper-menu>
+  	</paper-dropdown-menu><br>
+	<paper-button disabled=[[!allset]] on-click='submit'>Login</paper-button>
 </template>
 </dom-module>
 
@@ -33,7 +47,10 @@ Polymer({
 			type: Number,
 			notify: true
 		},
-
+		sex: {
+			type: String,
+			notify: true
+		},
     	groupid: {
     		type: String,
     		notify: true,
@@ -44,9 +61,19 @@ Polymer({
     		notify: true
     	}
     },
-
+	observers: [
+		'checkinput(name, age, sex)'
+	],
+	checkinput: function(name, age, sex){
+		if (name && age && sex){
+			this.allset = true;
+		}
+		else {
+			this.allset = false;
+		}
+	},
     ready:function(){
-
+		this.allset = false;
 		function getCookie(cname) {
 			var name = cname + "=";
 			var ca = document.cookie.split(';');

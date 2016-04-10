@@ -55,7 +55,7 @@
 #camerainput{
 	position: absolute;
 	bottom: 0;
-	right: 0;
+	right: 75px;
 	margin: 0;
 	padding: 0;
 	width: 50px;
@@ -105,7 +105,15 @@ star-rating {
 
 	<carbon-location route="{{route}}"></carbon-location>
 
-	<cow-element id='cowelement' username='{{username}}' groupid='{{groupid}}' userid='{{cowid}}' userfeatures='{{userfeatures}}' me='{{me}}'></cow-element>
+	<cow-element id='cowelement'
+		username='{{username}}'
+		groupid='{{groupid}}'
+		userid='{{cowid}}'
+		userfeatures='{{userfeatures}}'
+		me='{{me}}'
+		age='{{age}}'
+		sex='{{sex}}'
+	></cow-element>
 	<geopos-element curposition='{{curpos}}'></geopos-element>
 
 
@@ -120,7 +128,24 @@ star-rating {
 
 	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
-		<login-element username='{{username}}' userid='{{cowid}}' knownuser='{{knownuser}}'></login-element>
+		<div>
+			<login-element
+				username='{{username}}'
+				userid='{{cowid}}'
+				knownuser='{{knownuser}}'
+				age='{{age}}'
+				sex='{{sex}}'
+			></login-element>
+		</div>
+	</paper-dialog>
+
+	<paper-dialog modal id="photoDialog" opened="{{showPhotoDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<img id="photopreview" src="">
+		<star-rating id="starRating" stars="5" rate="{{photoRating}}"></star-rating>
+		<div class="buttons">
+			<paper-button dialog-dismiss on-click="resetForm">Cancel</paper-button>&nbsp;
+			<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
+		</div>
 	</paper-dialog>
 
 	<div id='map'></div>
@@ -130,14 +155,6 @@ star-rating {
 	<paper-toast id="toast" text="{{msg}}"></paper-toast>
 	<form id="photoForm">
 		<input type="file" required id="camerainput" name="photo" accept="image/*" capture="camera" on-change="previewPhoto"/>
-		<paper-dialog modal id="photoDialog" opened="{{showPhotoDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-			<img id="photopreview" src="">
-			<star-rating id="starRating" stars="5" rate="{{photoRating}}"></star-rating>
-			<div class="buttons">
-				<paper-button dialog-dismiss on-click="resetForm">Cancel</paper-button>&nbsp;
-				<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
-			</div>
-		</paper-dialog>
 	</form>
 </div>
 </template>
@@ -194,7 +211,7 @@ Polymer({
 					center: [4.90,52.36],
 					zoom: 24,
 					minZoom: 10,
-					maxZoom: 30,
+					maxZoom: 24,
 					projection: d3.geo.mercator()
 			});
 
@@ -235,7 +252,7 @@ Polymer({
 		var preview = this.$.photopreview;
 		var file = this.$.camerainput.files[0];
 		if(!file) return;
-		
+
 		var spinner = this.$.spinner;
 		var reader = new FileReader();
 
@@ -255,19 +272,18 @@ Polymer({
 			this.resetForm();
 			return;
 		}
-		
 		var self = this;
 		var callback = function(success, response) {
 			if (!success) {
 				self.status(response);
-				self.previewPhoto();
+				self.previewPhoto(); // preview the photo again, so the user can resubmit
 				return;
 			}
 
 			var pos = response.indexOf('{');
 			if (pos === -1) {
 				self.status('Invalid server response.');
-				self.previewPhoto();
+				self.previewPhoto(); // preview the photo again, so the user can resubmit
 				return;
 			}
 
@@ -275,7 +291,7 @@ Polymer({
 			var photoID = responseJSON.filename;
 			if (!photoID) {
 				self.status('Did not receive photo ID.');
-				self.previewPhoto();
+				self.previewPhoto(); // preview the photo again, so the user can resubmit
 				return;
 			}
 			
@@ -397,12 +413,12 @@ Polymer({
 			});
 		};
 	},
-	
+
 	resetForm: function(){
 		this.photoRating = 0;
 		this.$.photoForm.reset();
 	},
-	
+
 	status: function(status){
 		this.msg = status;
 		this.$.toast.open();
