@@ -21,6 +21,7 @@
 <script src="../bower_components/topojson/topojson.js"></script>
 <script src="../bower_components/d3-plugins/geo/tile/tile.js"></script>
 <script src="../bower_components/d3.mappu/dist/d3.mappu.js"></script>
+<script src="./groups.js"></script>
 <dom-module id="gmiddag-mobile">
 <style>
 #map {
@@ -52,14 +53,14 @@
 }
 
 #camerainput{
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	right: 0;
 	margin: 0;
 	padding: 0;
-	width: 50px;
-	height: 50px;
-	font-size: 20px;
+	width: 60px;
+	height: 60px;
+	font-size: 1px;
 	cursor: pointer;
 	opacity: 0;
 	filter: alpha(opacity=0);
@@ -121,7 +122,7 @@ star-rating {
 	<paper-dialog class='warning' modal id='groupdialog' opened="[[!groupid]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Geen groep</h2>
 		<div>
-			Er is geen groep bekend in de URL
+			Er is geen geldige groep opgegeven in de URL.
 		</div>
 	</paper-dialog>
 
@@ -172,6 +173,12 @@ Polymer({
 		photofeatures: {
 			type: Array
 		},
+		userLayer: {
+			type: Object
+		},
+		photoLayer: {
+			type: Object
+		},
 		knownuser: {
 			type: Boolean
 		},
@@ -204,17 +211,22 @@ Polymer({
 	observers: [
 		'_curposChanged(curpos,map,me)',
 		'_usersChanged(userfeatures,userLayer)',
-		'_photosChanged(photofeatures)' // TODO ,photoLayer
+		'_photosChanged(photofeatures, photoLayer)' // TODO ,photoLayer
 	],
 	_routeChanged: function(route){
-		this.groupid = route.__queryParams.group || false;
+		routeHash = route.__queryParams.group;
+		if (validGroups[routeHash])
+			this.groupid = validGroups[routeHash].groupid;
+		else
+			this.groupid = false;
 	},
-	_usersChanged: function(users){
-		this.userLayer.data = users;
+	_usersChanged: function(userfeatures, userLayer){
+		this.userLayer.data = userfeatures;
 	},
-	_photosChanged: function(photos){
+	_photosChanged: function(photofeatures, photoLayer){
 		console.log('_photosChanged');
-		console.log(photos);
+		console.log(photofeatures);
+		
 		//this.photoLayer.data = photos;
 	},
 	_curposChanged: function(pos,map,me){
@@ -231,47 +243,42 @@ Polymer({
 	ready:function(){
 		var self = this;
 		this.map = new d3.mappu.Map('map', {
-					center: [4.90,52.36],
-					zoom: 24,
-					minZoom: 10,
-					maxZoom: 24,
-					projection: d3.geo.mercator()
-			});
+				center: [4.90,52.36],
+				zoom: 24,
+				minZoom: 10,
+				maxZoom: 24,
+				projection: d3.geo.mercator()
+		});
 
-			var layer = new d3.mappu.RasterLayer('layer1', {
-				ogc_type: 'tms',
-				url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-				opacity: 1
-			}).addTo(this.map);
+		var layer = new d3.mappu.RasterLayer('layer1', {
+			ogc_type: 'tms',
+			url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+			opacity: 1
+		}).addTo(this.map);
 
-			var opacscale = d3.scale.linear().range([0,1]).domain([23,24]);
-			var opacfunc = function(){
-				return opacscale(self.map.zoom);
-			}
+		var opacscale = d3.scale.linear().range([0,1]).domain([23,24]);
+		var opacfunc = function(){
+			return opacscale(self.map.zoom);
+		}
 
-			this.userLayer = new d3.mappu.VectorLayer('userLayer',{
-				reproject: true,
-				duration: 1000,
-				labelStyle: {
-					fill: 'steelBlue',
-					stroke: 'none',
-					opacity: opacfunc
-				},
-				style: {
-					fill: 'steelBlue',
-					stroke: 'none'
-				},
-				labelfield: 'name'
-			}).addTo(this.map);
+		this.userLayer = new d3.mappu.VectorLayer('userLayer',{
+			reproject: true,
+			duration: 1000,
+			labelStyle: {
+				fill: 'steelBlue',
+				stroke: 'none',
+				opacity: opacfunc
+			},
+			style: {
+				fill: 'steelBlue',
+				stroke: 'none'
+			},
+			labelfield: 'name'
+		}).addTo(this.map);
 
-			/*this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
-				reproject: true,
-				duration: 1000,
-				style: {
-					fill: 'steelBlue',
-					stroke: 'none'
-				},
-			}).addTo(this.map);*/
+		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
+			reproject: false,
+		}).addTo(this.map);
 
 		this.imageElement = this.$.imageelement;
 	},
