@@ -13,7 +13,7 @@ Polymer({
     properties: {
     	curposition: {
 			type: Array,
-			value: function(){return [5,52]}, //TODO: set to Utrecht
+			value: function(){return [5.123739, 52.096188]},
 			notify: true,
 			readonly:true
 		},
@@ -21,6 +21,12 @@ Polymer({
 			type: Number,
 			notify: true,
 			value: function(){return new Date().getTime();},
+			readonly: true
+		},
+		distance: {
+			type: Number,
+			notify: true,
+			value: 0,
 			readonly: true
 		},
 		totaldistance: {
@@ -69,15 +75,14 @@ Polymer({
 				return;
 			}
 
-			var distance = calculateDistance(lastPos, curposition);
-			self.distance = distance;
-			self.totaldistance += distance;
-			self.speed = distance / ((curtime - lastTime) / 3600000); // km/h
+			self.distance = calculateDistance(lastPos, curposition);
+			self.totaldistance += self.distance;
 
-			if (distance < 0.010) return; // only update if distance >= 10m
-
-			lastPos = curposition;
-			lastTime = curtime;
+			if (self.distance >= 0.010) { // only update speed if distance >= 10m
+				self.speed = self.distance / ((curtime - lastTime) / 3600000); // km/h
+				lastPos = curposition;
+				lastTime = curtime;
+			}
 		}
         function positionerror(e){
             //console.warn('Position error: ',e);

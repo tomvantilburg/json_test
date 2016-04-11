@@ -29,6 +29,12 @@ Polymer({
     		notify: true,
     		readonly: true
     	},
+    	photofeatures: {
+    		type: Array,
+    		value: function(){return []},
+    		notify: true,
+    		readonly: true
+    	},
 		groupid: {
 			type: String,
 		},
@@ -102,7 +108,28 @@ Polymer({
 		this.cow.projectStore().loaded.then(function(){
 			var project = cow.projects('geodanmiddag2016')?cow.projects('geodanmiddag2016'):cow.projects({_id:'geodanmiddag2016'}).sync();
 			self.project = project;
+			project.itemStore().on('datachange', function(){
+				var items = self.project.items();
+				self.photofeatures = items.filter(function(d){
+					var maxage = new Date().getTime() - (1000 * 60); //not older than 1 minute
+					return !d.deleted() && d.data('type') === 'photo' && d.data('location') && d.updated() > maxage;
+				}).map(function(d){
+					return {
+						id: d.id(),
+						type: 'Feature',
+						geometry: {type: 'Point', coordinates: d.data('location')},
+						properties: {
+							user: d.data('user'),
+							group: d.data('group'),
+							photorating: d.data('photorating'),
+							location: d.data('location'),
+							time: d.updated()
+						}
+					};
+				});
+			});
 		});
+
 		//We have a userid from client, now see if it is known in cow
 		this.cow.userStore().loaded.then(function(){
 			//Do I exist?
@@ -113,6 +140,9 @@ Polymer({
 					.data('group',self.groupid)
 					.data('age',self.age)
 					.data('sex',self.sex)
+					.data('speed',0)
+					.data('totaldistance',0)
+					.data('numphotos',0)
 					.sync();
 				self.cow.user(self.userid); // TODO: Check with Tom if this is needed
 				self.msg = 'Created new user';
@@ -134,10 +164,14 @@ Polymer({
 				.data('location',position)
 				.sync();
 		}
-		return;
-
-		// TODO
-		console.log('Photo added with ID: ' + photoID + ', rating: ' + photoRating);
+		if(this.me) {
+			var numphotos = this.me.data('numphotos');
+			if(!numphotos) 
+				numphotos = 0;
+			else
+				numphotos = parseInt(numphotos);
+			this.me.data('numphotos', numphotos + 1).sync();
+		}
 	}
 
 });
