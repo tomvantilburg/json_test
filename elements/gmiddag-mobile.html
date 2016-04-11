@@ -245,7 +245,22 @@ Polymer({
 				.data('speed', this.speed)
 				.data('totaldistance', this.totaldistance)
 				.sync();
+			this.meLayer.addFeature({
+				id: 0,
+				type: 'Feature',
+				geometry: {
+					type: 'Point',
+					coordinates: pos
+				},
+				properties: {
+					name: '->' + this.username + '<-'
+				},
+				style: {
+					radius: 20
+				}
+			});
 		}
+
 	},
 
 	ready:function(){
@@ -273,9 +288,6 @@ Polymer({
 				return groupscale(d.properties.group);
 			}
 
-			this.testLayer = new d3.mappu.VectorLayer('testLayer',{
-				reproject:false
-			}).addTo(this.map);
 			this.userLayer = new d3.mappu.VectorLayer('userLayer',{
 				reproject: true,
 				duration: 1000,
@@ -289,6 +301,16 @@ Polymer({
 					stroke: 'none'
 				},
 				labelfield: 'name'
+			}).addTo(this.map);
+
+			this.meLayer = new d3.mappu.VectorLayer('meLayer',{
+				reproject: true,
+				duration: 1000,
+				style: {
+					fill: 'none',
+					stroke: 'red',
+					'stroke-width': '2px'
+				}
 			}).addTo(this.map);
 
 			/*this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
