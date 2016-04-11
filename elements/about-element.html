@@ -1,0 +1,33 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+
+
+<dom-module id="about-element">
+<style>
+
+</style>
+<template>
+
+	Spel ontwikkeld door S&amp;R op basis van:
+	<paper-item>COW</paper-item>
+	<paper-item>d3.mappu</paper-item>
+	<paper-item>Polymer</paper-item>
+
+</template>
+</dom-module>
+
+<script>
+Polymer({
+    is: 'about-element',
+    properties: {
+    	username: {
+    		type: String,
+    		notify: true,
+    	}
+
+    },
+    ready:function(){
+
+    }
+});
+</script>

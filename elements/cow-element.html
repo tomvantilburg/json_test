@@ -29,6 +29,12 @@ Polymer({
     		notify: true,
     		readonly: true
     	},
+		usertrails: {
+			type: Array,
+    		value: function(){return []},
+    		notify: true,
+    		readonly: true
+		},
     	photofeatures: {
     		type: Array,
     		value: function(){return []},
@@ -92,7 +98,10 @@ Polymer({
 					id: d.id(),
 					type: 'Feature',
 					geometry: {type: 'Point', coordinates: d.data('location')},
-					properties: {name: d.data('name')}
+					properties: {
+						name: d.data('name'),
+						group: d.data('group')
+					}
 				};
 			});
 		});
@@ -123,6 +132,23 @@ Polymer({
 						time: d.updated()
 					};
 				});
+
+				self.usertrails = items.filter(function(d){
+					return !d.deleted() && d.data('type') === 'user' && d.data('location');
+				}).map(function(d){
+					return {
+						id: d.id(),
+						type: 'Feature',
+						geometry: {type: 'Point', coordinates: d.data('location')},
+						properties: {
+							user: d.data('user'),
+							group: d.data('group'),
+							location: d.data('location'),
+							time: d.updated()
+						}
+					};
+				});
+
 			});
 		});
 
@@ -140,10 +166,10 @@ Polymer({
 					.data('totaldistance',0)
 					.data('numphotos',0)
 					.sync();
-				self.cow.user(self.userid); // TODO: Check with Tom if this is needed
 				self.msg = 'Created new user';
 				self.$.toast.open();
 			}
+			self.cow.user(self.userid);
 			self.username = self.username || self.me.data('name');
 			self.groupid = self.groupid || self.me.data('group');
 		});
@@ -161,12 +187,19 @@ Polymer({
 				.sync();
 		}
 		if(this.me) {
-			var numphotos = this.me.data('numphotos');
-			if(!numphotos) 
-				numphotos = 0;
-			else
-				numphotos = parseInt(numphotos);
+			var numphotos = this.me.data('numphotos') || 0;
 			this.me.data('numphotos', numphotos + 1).sync();
+		}
+	},
+	addUserLocation: function(userid,username, position ){
+		var self = this;
+		if (this.project){
+			this.project.items({})
+				.data('type','user')
+				.data('userid',userid)
+				.data('username',username)
+				.data('location',position)
+				.sync();
 		}
 	}
 
