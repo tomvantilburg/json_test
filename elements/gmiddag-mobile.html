@@ -264,10 +264,15 @@ Polymer({
 				opacity: 1
 			}).addTo(this.map);
 
-			var opacscale = d3.scale.linear().range([0,1]).domain([23,24]);
+			var opacscale = d3.scale.linear().range([0.3,0.3,1]).domain([0,23,24]);
 			var opacfunc = function(){
 				return opacscale(self.map.zoom);
 			}
+			var groupscale = d3.scale.category20();
+			var bygroup = function(d){
+				return groupscale(d.properties.group);
+			}
+
 			this.testLayer = new d3.mappu.VectorLayer('testLayer',{
 				reproject:false
 			}).addTo(this.map);
@@ -275,12 +280,12 @@ Polymer({
 				reproject: true,
 				duration: 1000,
 				labelStyle: {
-					fill: 'steelBlue',
+					fill: bygroup,
 					stroke: 'none',
 					opacity: opacfunc
 				},
 				style: {
-					fill: 'steelBlue',
+					fill: bygroup,
 					stroke: 'none'
 				},
 				labelfield: 'name'
