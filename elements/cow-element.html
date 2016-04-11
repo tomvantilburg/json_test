@@ -144,10 +144,10 @@ Polymer({
 					.data('totaldistance',0)
 					.data('numphotos',0)
 					.sync();
-				self.cow.user(self.userid); // TODO: Check with Tom if this is needed
 				self.msg = 'Created new user';
 				self.$.toast.open();
 			}
+			self.cow.user(self.userid);
 			self.username = self.username || self.me.data('name');
 			self.groupid = self.groupid || self.me.data('group');
 		});
@@ -165,11 +165,7 @@ Polymer({
 				.sync();
 		}
 		if(this.me) {
-			var numphotos = this.me.data('numphotos');
-			if(!numphotos) 
-				numphotos = 0;
-			else
-				numphotos = parseInt(numphotos);
+			var numphotos = this.me.data('numphotos') || 0;
 			this.me.data('numphotos', numphotos + 1).sync();
 		}
 	}
