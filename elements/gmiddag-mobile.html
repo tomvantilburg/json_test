@@ -16,6 +16,7 @@
 <link rel="import" href="./cow-element.html">
 <link rel="import" href="./geopos-element.html">
 <link rel="import" href="./image-element.html">
+<link rel="import" href="./about-element.html">
 
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
@@ -38,7 +39,7 @@
 	height: 100%;
 }
 
-#locationbutton{
+#locationbutton {
 	position: fixed;
 	bottom: 10px;
 	left: 10px;
@@ -52,7 +53,16 @@
 	z-index: 101;
 }
 
-#camerainput{
+
+#aboutbutton {
+	position: fixed;
+	top: 10px;
+	right: 10px;
+	z-index: 101;
+	background: none;
+}
+
+#camerainput {
 	position: fixed;
 	bottom: 0;
 	right: 0;
@@ -67,14 +77,16 @@
 	z-index: 101;
 }
 
-#photopreview{
+#photopreview {
 	width: 200px;
 }
 
 #toast {
 	z-index: 101;
 }
-
+#logindialog {
+	min-width: 250px;
+}
 paper-dialog.warning {
 	width: 200px;
 	border: 2px solid;
@@ -91,6 +103,13 @@ star-rating {
 	color: #ff4081;
 }
 
+paper-fab{
+	background-color: orange;
+}
+
+paper-fab[active]{
+	background-color: red;
+}
 
 </style>
 <template>
@@ -103,13 +122,14 @@ star-rating {
 		groupid='{{groupid}}'
 		userid='{{cowid}}'
 		userfeatures='{{userfeatures}}'
+		usertrails='{{usertrails}}'
 		photofeatures='{{photofeatures}}'
 		photos='{{photos}}'
 		me='{{me}}'
 		age='{{age}}'
 		sex='{{sex}}'
 	></cow-element>
-	<geopos-element id='geoposelement' 
+	<geopos-element id='geoposelement'
 		curposition='{{curpos}}'
 		distance='{{distance}}'
 		totaldistance='{{totaldistance}}'
@@ -118,6 +138,14 @@ star-rating {
 	<image-element id="imageelement"></image-element>
 
 <div id='content'>
+
+	<paper-dialog id='aboutdialog' opened="{{about}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<h2>Geodanmiddag 2016</h2>
+		<about-element username='{{username}}'></about-element>
+		<div class="buttons">
+		    <paper-button dialog-confirm>Sluit</paper-button>
+		</div>
+	</paper-dialog>
 
 	<paper-dialog class='warning' modal id='groupdialog' opened="[[!groupid]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Geen groep</h2>
@@ -149,7 +177,8 @@ star-rating {
 	</paper-dialog>
 
 	<div id='map'></div>
-	<paper-fab mini id="locationbutton" on-click="" icon="maps:my-location"></paper-fab>
+	<paper-fab mini id="aboutbutton" toggles active={{about}} icon="icons:info-outline"></paper-fab>
+	<paper-fab mini id="locationbutton" toggles active={{following}} icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-toast id="toast" text="{{msg}}"></paper-toast>
 	<form id="photoForm">
@@ -206,11 +235,16 @@ Polymer({
 		route: {
 			type: Object,
 			observer: '_routeChanged'
+		},
+		following: {
+			value: true,
+			observer: '_followingChanged'
 		}
 	},
 	observers: [
 		'_curposChanged(curpos,map,me)',
 		'_usersChanged(userfeatures,userLayer)',
+		'_trailsChanged(usertrails,trailLayer)',
 		'_photosChanged(photofeatures, photoLayer)' // TODO ,photoLayer
 	],
 	_routeChanged: function(route){
@@ -223,10 +257,12 @@ Polymer({
 	_usersChanged: function(userfeatures, userLayer){
 		this.userLayer.data = userfeatures;
 	},
+	_trailsChanged: function(trailfeatures,trailLayer){
+		this.trailLayer.data = trailfeatures;
+	},
 	_photosChanged: function(photofeatures, photoLayer){
 		console.log('_photosChanged');
 		console.log(photofeatures);
-		
 		var projection = d3.geo.mercator().scale(1 / 2 / Math.PI).translate([0, 0]);
 		var images = photoLayer.drawboard.select('g')
 						.selectAll('image')
@@ -247,16 +283,39 @@ Polymer({
 		//this.photoLayer.data = photofeatures;
 	},
 	_curposChanged: function(pos,map,me){
-		//map.center = pos;
-		//map.redraw();
+		if (this.following){
+			map.center = pos;
+			map.redraw();
+		}
 		if (this.distance >= 0.010) { // only update cow if distance >= 10m
 			me.data('location', pos)
 				.data('speed', this.speed)
 				.data('totaldistance', this.totaldistance)
 				.sync();
+			this.meLayer.addFeature({
+				id: 0,
+				type: 'Feature',
+				geometry: {
+					type: 'Point',
+					coordinates: pos
+				},
+				properties: {
+					name: '->' + this.username + '<-'
+				},
+				style: {
+					radius: 20
+				}
+			});
+			var cowElement = this.$.cowelement;
+			cowElement.addUserLocation(me.id(),me.data('name'), pos );
 		}
 	},
-
+	_followingChanged: function(follow){
+		if (follow && this.curpos){
+			this.map.center = this.curpos;
+			this.map.redraw();
+		}
+	},
 	ready:function(){
 		var self = this;
 		this.map = new d3.mappu.Map('map', {
@@ -269,29 +328,72 @@ Polymer({
 
 		var layer = new d3.mappu.RasterLayer('layer1', {
 			ogc_type: 'tms',
+			//url: '//saturnus.geodan.nl/mapproxy/map/tms/1.0.0/nachtkaart/EPSG900913/{z}/{x}/{y}.png',
 			url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
 			opacity: 1
 		}).addTo(this.map);
 
-		var opacscale = d3.scale.linear().range([0,1]).domain([23,24]);
+		this.trailLayer = new d3.mappu.VectorLayer('userLayer',{
+			reproject: true,
+			style: {
+				fill: 'gray',
+				stroke: 'none'
+			}
+		}).addTo(this.map);
+
+		var opacscale = d3.scale.linear().range([0.3,0.3,1]).domain([0,23,24]);
 		var opacfunc = function(){
 			return opacscale(self.map.zoom);
+		}
+		var groupscale = d3.scale.category20();
+		var bygroup = function(d){
+			return groupscale(d.properties.group);
 		}
 
 		this.userLayer = new d3.mappu.VectorLayer('userLayer',{
 			reproject: true,
 			duration: 1000,
 			labelStyle: {
-				fill: 'steelBlue',
+				fill: bygroup,
 				stroke: 'none',
 				opacity: opacfunc
 			},
 			style: {
-				fill: 'steelBlue',
+				fill: bygroup,
 				stroke: 'none'
 			},
 			labelfield: 'name'
 		}).addTo(this.map);
+
+
+
+		this.meLayer = new d3.mappu.VectorLayer('meLayer',{
+			reproject: true,
+			duration: 1000,
+			style: {
+				fill: 'none',
+				stroke: 'orange',
+				'stroke-width': '2px'
+			}
+		}).addTo(this.map);
+		var myopac = 0;
+		var radius = 0;
+		var self = this;
+		var glower = function(){
+			myopac = myopac==1?0:1;
+			radius = radius==50?0:50;
+			self.meLayer.drawboard.transition().duration(2000)
+				.style('opacity',myopac);
+		}
+		setInterval(glower,2000);
+		/*this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
+			reproject: true,
+			duration: 1000,
+			style: {
+				fill: 'steelBlue',
+				stroke: 'none'
+			},
+		}).addTo(this.map);*/
 
 		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
 			reproject: false,
@@ -347,7 +449,7 @@ Polymer({
 				self.previewPhoto(); // preview the photo again, so the user can resubmit
 				return;
 			}
-			
+
 			// add the photo to cow to notify peers
 			var cowElement = self.$.cowelement;
 			cowElement.addPhoto(photoID, self.photoRating, self.curpos);
