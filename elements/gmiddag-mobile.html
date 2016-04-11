@@ -101,6 +101,9 @@ star-rating {
 	color: #ff4081;
 }
 
+.paper-fab-0[active]{
+	background-color: green;
+}
 
 </style>
 <template>
@@ -168,7 +171,7 @@ star-rating {
 
 	<div id='map'></div>
 	<paper-fab mini id="aboutbutton" toggles active={{about}} icon="icons:info-outline"></paper-fab>
-	<paper-fab mini id="locationbutton" on-click="" icon="maps:my-location"></paper-fab>
+	<paper-fab mini id="locationbutton" toggles active={{following}} icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-toast id="toast" text="{{msg}}"></paper-toast>
 	<form id="photoForm">
@@ -238,8 +241,10 @@ Polymer({
 		//this.photoLayer.data = photos;
 	},
 	_curposChanged: function(pos,map,me){
-		map.center = pos;
-		map.redraw();
+		if (this.following){
+			map.center = pos;
+			map.redraw();
+		}
 		if (this.distance >= 0.010) { // only update cow if distance >= 10m
 			me.data('location', pos)
 				.data('speed', this.speed)
