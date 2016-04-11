@@ -227,11 +227,28 @@ Polymer({
 		console.log('_photosChanged');
 		console.log(photofeatures);
 		
-		//this.photoLayer.data = photos;
+		var projection = d3.geo.mercator().scale(1 / 2 / Math.PI).translate([0, 0]);
+		var images = photoLayer.drawboard.select('g')
+						.selectAll('image')
+						.data(photofeatures, function(d) {return d.id});
+	
+		images.enter().append('g').append('image')
+				.attr('x', function(d) { return projection(d.location)[0]; } )
+				.attr('y', function(d) { return projection(d.location)[1]; } )
+				.attr("width", 64)
+				.attr("height", 64)
+				.attr("xlink:href", function(d){
+					return 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id +'_64.jpeg';
+				});
+
+		images.exit().remove();
+		
+		//images.transition
+		//this.photoLayer.data = photofeatures;
 	},
 	_curposChanged: function(pos,map,me){
-		map.center = pos;
-		map.redraw();
+		//map.center = pos;
+		//map.redraw();
 		if (this.distance >= 0.010) { // only update cow if distance >= 10m
 			me.data('location', pos)
 				.data('speed', this.speed)
@@ -243,7 +260,7 @@ Polymer({
 	ready:function(){
 		var self = this;
 		this.map = new d3.mappu.Map('map', {
-				center: [4.90,52.36],
+				center: [5.123739, 52.096188],
 				zoom: 24,
 				minZoom: 10,
 				maxZoom: 24,
@@ -324,7 +341,7 @@ Polymer({
 			}
 
 			var responseJSON = JSON.parse(response.substr(pos));
-			var photoID = responseJSON.filename;
+			var photoID = responseJSON.id;
 			if (!photoID) {
 				self.status('Did not receive photo ID.');
 				self.previewPhoto(); // preview the photo again, so the user can resubmit

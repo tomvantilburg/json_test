@@ -115,16 +115,12 @@ Polymer({
 					return !d.deleted() && d.data('type') === 'photo' && d.data('location') && d.updated() > maxage;
 				}).map(function(d){
 					return {
-						id: d.id(),
-						type: 'Feature',
-						geometry: {type: 'Point', coordinates: d.data('location')},
-						properties: {
-							user: d.data('user'),
-							group: d.data('group'),
-							photorating: d.data('photorating'),
-							location: d.data('location'),
-							time: d.updated()
-						}
+						id: d.data('photoid'),
+						user: d.data('user'),
+						group: d.data('group'),
+						photorating: d.data('photorating'),
+						location: d.data('location'),
+						time: d.updated()
 					};
 				});
 			});
