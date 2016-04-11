@@ -16,6 +16,7 @@
 <link rel="import" href="./cow-element.html">
 <link rel="import" href="./geopos-element.html">
 <link rel="import" href="./image-element.html">
+<link rel="import" href="./about-element.html">
 
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
@@ -37,7 +38,7 @@
 	height: 100%;
 }
 
-#locationbutton{
+#locationbutton {
 	position: fixed;
 	bottom: 10px;
 	left: 10px;
@@ -51,7 +52,15 @@
 	z-index: 101;
 }
 
-#camerainput{
+#aboutbutton {
+	position: fixed;
+	top: 10px;
+	right: 10px;
+	z-index: 101;
+	background: none;
+}
+
+#camerainput {
 	position: absolute;
 	bottom: 0;
 	right: 0;
@@ -66,7 +75,7 @@
 	z-index: 101;
 }
 
-#photopreview{
+#photopreview {
 	width: 200px;
 }
 
@@ -120,6 +129,14 @@ star-rating {
 
 <div id='content'>
 
+	<paper-dialog id='aboutdialog' opened="{{about}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<h2>Geodanmiddag 2016</h2>
+		<about-element username='{{username}}'></about-element>
+		<div class="buttons">
+		    <paper-button dialog-confirm>Sluit</paper-button>
+		</div>
+	</paper-dialog>
+
 	<paper-dialog class='warning' modal id='groupdialog' opened="[[!groupid]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Geen groep</h2>
 		<div>
@@ -150,6 +167,7 @@ star-rating {
 	</paper-dialog>
 
 	<div id='map'></div>
+	<paper-fab mini id="aboutbutton" toggles active={{about}} icon="icons:info-outline"></paper-fab>
 	<paper-fab mini id="locationbutton" on-click="" icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
 	<paper-toast id="toast" text="{{msg}}"></paper-toast>
