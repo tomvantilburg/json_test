@@ -284,8 +284,9 @@ Polymer({
 					radius: 20
 				}
 			});
+			var cowElement = this.$.cowelement;
+			cowElement.addUserLocation(me.id(),me.data('name'), pos );
 		}
-
 	},
 	_followingChanged: function(follow){
 		if (follow && this.curpos){
@@ -305,6 +306,7 @@ Polymer({
 
 		var layer = new d3.mappu.RasterLayer('layer1', {
 			ogc_type: 'tms',
+			//url: '//saturnus.geodan.nl/mapproxy/map/tms/1.0.0/nachtkaart/EPSG3857/{z}/{x}/{y}.png',
 			url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
 			opacity: 1
 		}).addTo(this.map);

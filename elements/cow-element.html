@@ -29,6 +29,12 @@ Polymer({
     		notify: true,
     		readonly: true
     	},
+		usertrails: {
+			type: Array,
+    		value: function(){return []},
+    		notify: true,
+    		readonly: true
+		},
     	photofeatures: {
     		type: Array,
     		value: function(){return []},
@@ -130,6 +136,23 @@ Polymer({
 						}
 					};
 				});
+
+				self.usertrails = items.filter(function(d){
+					return !d.deleted() && d.data('type') === 'user' && d.data('location');
+				}).map(function(d){
+					return {
+						id: d.id(),
+						type: 'Feature',
+						geometry: {type: 'Point', coordinates: d.data('location')},
+						properties: {
+							user: d.data('user'),
+							group: d.data('group'),
+							location: d.data('location'),
+							time: d.updated()
+						}
+					};
+				});
+
 			});
 		});
 
@@ -170,6 +193,17 @@ Polymer({
 		if(this.me) {
 			var numphotos = this.me.data('numphotos') || 0;
 			this.me.data('numphotos', numphotos + 1).sync();
+		}
+	},
+	addUserLocation: function(userid,username, position ){
+		var self = this;
+		if (this.project){
+			this.project.items({})
+				.data('type','user')
+				.data('userid',userid)
+				.data('username',username)
+				.data('location',position)
+				.sync();
 		}
 	}
 
