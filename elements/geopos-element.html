@@ -26,7 +26,7 @@ Polymer({
 		distance: {
 			type: Number,
 			notify: true,
-			value: 0,
+			value: 0.01,//km
 			readonly: true
 		},
 		totaldistance: {
@@ -85,7 +85,7 @@ Polymer({
 			}
 		}
         function positionerror(e){
-            //console.warn('Position error: ',e);
+            console.warn('Position error: ',e);
         }
         var navoptions = {
             enableHighAccuracy:true

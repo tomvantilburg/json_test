@@ -73,7 +73,9 @@
 #toast {
 	z-index: 101;
 }
-
+#logindialog {
+	min-width: 250px;
+}
 paper-dialog.warning {
 	width: 200px;
 	border: 2px solid;
@@ -108,7 +110,7 @@ star-rating {
 		age='{{age}}'
 		sex='{{sex}}'
 	></cow-element>
-	<geopos-element id='geoposelement' 
+	<geopos-element id='geoposelement'
 		curposition='{{curpos}}'
 		distance='{{distance}}'
 		totaldistance='{{totaldistance}}'
@@ -248,7 +250,9 @@ Polymer({
 			var opacfunc = function(){
 				return opacscale(self.map.zoom);
 			}
-
+			this.testLayer = new d3.mappu.VectorLayer('testLayer',{
+				reproject:false
+			}).addTo(this.map);
 			this.userLayer = new d3.mappu.VectorLayer('userLayer',{
 				reproject: true,
 				duration: 1000,
@@ -323,7 +327,7 @@ Polymer({
 				self.previewPhoto(); // preview the photo again, so the user can resubmit
 				return;
 			}
-			
+
 			// add the photo to cow to notify peers
 			var cowElement = self.$.cowelement;
 			cowElement.addPhoto(photoID, self.photoRating, self.curpos);
