@@ -318,12 +318,12 @@ Polymer({
 				return;
 			}
 			
-			self.status('Successfully uploaded photo.');
-			// reset form after successful upload
-			self.resetForm();
 			// add the photo to cow to notify peers
 			var cowElement = self.$.cowelement;
 			cowElement.addPhoto(photoID, self.photoRating, self.curpos);
+			self.status('Successfully uploaded photo.');
+			// reset form after successful upload
+			self.resetForm();
 		};
 		this.resizeAndUpload(file, 'photo', 1200, 1200, '/geodandag/uploadphoto', callback);
 	},
