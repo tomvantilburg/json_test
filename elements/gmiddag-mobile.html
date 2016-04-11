@@ -303,16 +303,24 @@ Polymer({
 				labelfield: 'name'
 			}).addTo(this.map);
 
+
+
 			this.meLayer = new d3.mappu.VectorLayer('meLayer',{
 				reproject: true,
 				duration: 1000,
 				style: {
 					fill: 'none',
-					stroke: 'red',
+					stroke: 'white',
 					'stroke-width': '2px'
 				}
 			}).addTo(this.map);
-
+			var myopac = 0;
+			var self = this;
+			var glower = function(){
+				myopac = myopac==1?0:1;
+				self.meLayer.drawboard.transition().duration(2000).style('opacity',myopac);
+			}
+			setInterval(glower,2000);
 			/*this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
 				reproject: true,
 				duration: 1000,
