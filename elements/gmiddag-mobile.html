@@ -101,11 +101,18 @@ star-rating {
 		groupid='{{groupid}}'
 		userid='{{cowid}}'
 		userfeatures='{{userfeatures}}'
+		photofeatures='{{photofeatures}}'
+		photos='{{photos}}'
 		me='{{me}}'
 		age='{{age}}'
 		sex='{{sex}}'
 	></cow-element>
-	<geopos-element curposition='{{curpos}}'></geopos-element>
+	<geopos-element id='geoposelement' 
+		curposition='{{curpos}}'
+		curposition='{{distance}}'
+		curposition='{{totaldistance}}'
+		curposition='{{speed}}'
+	></geopos-element>
 
 
 <div id='content'>
@@ -161,11 +168,23 @@ Polymer({
 		userfeatures: {
 			type: Array
 		},
+		photofeatures: {
+			type: Array
+		},
 		knownuser: {
 			type: Boolean
 		},
 		curpos: {
 			type: Array
+		},
+		distance: {
+			type: Number
+		},
+		totaldistance: {
+			type: Number
+		},
+		speed: {
+			type: Number
 		},
 		me: {
 			type: Object
@@ -180,7 +199,8 @@ Polymer({
 	},
 	observers: [
 		'_curposChanged(curpos,map,me)',
-		'_usersChanged(userfeatures,userLayer)'
+		'_usersChanged(userfeatures,userLayer)',
+		'_photosChanged(photofeatures)' // TODO ,photoLayer
 	],
 	_routeChanged: function(route){
 		this.groupid = route.__queryParams.group || false;
@@ -188,11 +208,20 @@ Polymer({
 	_usersChanged: function(users){
 		this.userLayer.data = users;
 	},
+	_photosChanged: function(photos){
+		console.log('_photosChanged');
+		console.log(photos);
+		//this.photoLayer.data = photos;
+	},
 	_curposChanged: function(pos,map,me){
 		map.center = pos;
 		map.redraw();
-		me.data('location', pos).sync();
-		//TODO: add speed and totalDistance
+		if (this.distance >= 0.010) { // only update cow if distance >= 10m
+			me.data('location', pos)
+				.data('speed', this.speed)
+				.data('totaldistance', this.totaldistance)
+				.sync();
+		}
 	},
 
 	ready:function(){
@@ -226,10 +255,19 @@ Polymer({
 				},
 				style: {
 					fill: 'steelBlue',
-					strone: 'none'
+					stroke: 'none'
 				},
 				labelfield: 'name'
 			}).addTo(this.map);
+
+			/*this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
+				reproject: true,
+				duration: 1000,
+				style: {
+					fill: 'steelBlue',
+					stroke: 'none'
+				},
+			}).addTo(this.map);*/
 
 
 	},
