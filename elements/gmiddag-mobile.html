@@ -82,10 +82,6 @@
 	z-index: 101;
 }
 
-#photopreview {
-	width: 200px;
-}
-
 #toast {
 	z-index: 101;
 }
@@ -144,13 +140,6 @@ star-rating {
 		</div>
 	</paper-dialog>
 
-	<paper-dialog class='warning' modal id='groupdialog' opened="[[!groupid]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-		<h2>Geen groep</h2>
-		<div>
-			Er is geen geldige groep opgegeven in de URL.
-		</div>
-	</paper-dialog>
-
 	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
 		<div>
@@ -164,13 +153,25 @@ star-rating {
 		</div>
 	</paper-dialog>
 
+	<paper-dialog class='warning' modal id='groupdialog' opened="[[!groupid]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<h2>Geen groep</h2>
+		<div>
+			Er is geen geldige groep opgegeven in de URL.
+		</div>
+	</paper-dialog>
+
 	<paper-dialog modal id="photoDialog" opened="{{showPhotoDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-		<img id="photopreview" src="">
+		<img id="photopreview" width="200" src="">
 		<star-rating id="starRating" stars="5" rate="{{photoRating}}"></star-rating>
 		<div class="buttons">
 			<paper-button dialog-dismiss on-click="resetForm">Cancel</paper-button>&nbsp;
 			<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
 		</div>
+	</paper-dialog>
+
+	<paper-dialog id="popupDialog" opened="{{showPopupDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<img id="photopopup" width="200" src="">
+		<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>
 	</paper-dialog>
 
 	<div id='map'></div>
@@ -225,6 +226,8 @@ Polymer({
 		},
 		showPhotoDialog: false,
 		photoRating: 0,
+		showPopupDialog: false,
+		popupRating: 0,
 		msg: '',
 		imageElement: {
 			type: Object
@@ -376,6 +379,14 @@ Polymer({
 		
 		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
 			reproject: true,
+			events: [
+				{
+					event: 'click',
+					action: function(d) {
+						self.popupPhoto(d);
+					}
+				}
+			]
 		}).addTo(this.map);
 
 		this.map.zoombehaviour.on('zoom.follow', function(){ self.following = false; });
@@ -400,6 +411,17 @@ Polymer({
 		});
 	},
 
+	popupPhoto: function(d) {
+		var popupImg = this.$.photopopup;
+		var url = 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id + '_256.jpeg';
+		popupImg.src = url;
+		this.popupRating = d.properties.photorating;
+		var self = this;
+		popupImg.onload = function() {
+			self.showPopupDialog = true;
+		};		
+	},
+	
 	submitPhoto: function(){
 		var preview = this.$.photopreview;
 		if(!preview.src){ // Shouldn't happen
