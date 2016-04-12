@@ -1,0 +1,65 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="takemehome-element">
+<style>
+</style>
+<template>
+    <iron-ajax
+        id='requestRoute'
+        verbose="true"
+        handle-as="json"
+        with-credentials="true"
+        on-response="handleRoute"
+        on-error="handleError"
+        url="https://services.geodan.nl/routing/route"
+        params="{{params}}"
+    ></iron-ajax>
+</template>
+</dom-module>
+
+<script>
+Polymer({
+    is: 'takemehome-element',
+    properties: {
+        homelocation: {
+            type: Array,
+            value: function(){return [5.123739, 52.096188]}
+        }
+
+    },
+    ready:function(){
+    },
+    takemehome: function(curpos){
+        this.params = {
+            fromcoordx: curpos[0],
+            fromcoordy: curpos[1],
+            tocoordx: this.homelocation[0],
+            tocoordy: this.homelocation[1],
+            srs: 'epsg:4326',
+            routetype: 'distance',
+            networkType: 'gsps_nl',
+            returntype: 'coords',
+            outputformat: 'json',
+            apikey: 'fafc04a7-ffec-11e5-a40c-005056805b87'
+        }
+        this.$.requestRoute.generateRequest();
+    },
+    //The response from the document service will be parsed here.
+	handleRoute: function(d,e){
+		var self = this;
+        var map = this.map;
+
+        var data = d.detail.xhr.response;
+        if (!data.exception){
+            var feat = data.features[0];
+            feat.id = 'myroute'; //only 1 route in the layer
+            //this.routelayer.addFeature(feat);
+            this.fire('newroute',feat);
+        }
+	},
+    handleError: function(){
+    	console.warn(e.detail.xhr.statustext);
+    }
+});
+</script>
