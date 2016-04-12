@@ -11,9 +11,12 @@
 Polymer({
     is: 'geopos-element',
     properties: {
+		me: {
+			type: Object
+		},
     	curposition: {
 			type: Array,
-			value: function(){return [5.123739, 52.096188]},
+			//value: function(){return [5.123739, 52.096188]}, // not needed
 			notify: true,
 			readonly:true
 		},
@@ -64,6 +67,7 @@ Polymer({
 
 
 		function updatePosition(position) {
+			if (!self.me) return; // only update position if we have a valid user
 			var curposition = [position.coords.longitude, position.coords.latitude];
 			self.curposition = curposition;
 			var curtime = new Date().getTime();
