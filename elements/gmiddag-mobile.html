@@ -304,12 +304,14 @@ Polymer({
 		var fadeImages = photoLayer.drawboard.selectAll('image').filter( function(d) {
 			return (this.style.opacity === ""); // skip any images which are currently in transition
 		});
-		fadeImages.transition('image-fade')
+		fadeImages.style('opacity', 1.0)
+				.transition('image-fade')
 				.delay(25000)
 				.duration(5000)
-				.style('opacity', 0);
-
+				.style('opacity', 0)
+				.each('end', function(d) { this.style.display = 'none';	});
 	},
+
 	_curposChanged: function(pos,map,me){
 		if (this.following){
 			map.center = pos;
