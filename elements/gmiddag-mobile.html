@@ -197,7 +197,7 @@ paper-fab[active]{
 	</paper-dialog>
 
 	<div id='map'></div>
-	<paper-fab mini id="homebutton" toggles active={{takemehome}} icon="icons:home"></paper-fab>
+	<paper-fab mini id="homebutton" toggles active={{takemehome}} disabled=[[calculating]] icon="icons:home"></paper-fab>
 	<paper-fab mini id="aboutbutton" toggles active={{about}} icon="icons:info-outline"></paper-fab>
 	<paper-fab mini id="locationbutton" toggles active={{following}} icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
@@ -266,6 +266,9 @@ Polymer({
 		takemehome: {
 			value: false,
 			observer: '_takemehomeChanged'
+		},
+		calculating: {
+			value: false
 		}
 	},
 	observers: [
@@ -333,8 +336,13 @@ Polymer({
 		}
 	},
 	_takemehomeChanged: function(takemehome){
-		if (takemehome && this.curpos)
+		if (takemehome && this.curpos){
 			this.$.takemehomeelement.takemehome(this.curpos);
+			this.calculating = true;
+		}
+		else if (!takemehome && this.routeLayer){
+			this.routeLayer.data = [];
+		}
 	},
 	_showLogin() {
 		return this.groupid && !this.knownuser;
@@ -436,6 +444,7 @@ Polymer({
 
 		this.addEventListener('newroute', function(d){
 			self.routeLayer.addFeature(d.detail);
+			self.calculating = false;
 		});
 
 		this.map.zoombehaviour.on('zoom.follow', function(){ self.following = false; });
@@ -468,13 +477,13 @@ Polymer({
 		var self = this;
 		popupImg.onload = function() {
 			self.showPopupDialog = true;
-		};		
+		};
 	},
-	
+
 	closePopup: function() {
 		this.showPopupDialog = false;
 	},
-	
+
 	submitPhoto: function(){
 		var preview = this.$.photopreview;
 		if(!preview.src){ // Shouldn't happen
