@@ -162,7 +162,7 @@ paper-fab[active]{
 		</div>
 	</paper-dialog>
 
-	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+	<paper-dialog modal id='logindialog' opened="[[_showLogin]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
 		<div>
 			<login-element
@@ -192,8 +192,8 @@ paper-fab[active]{
 	</paper-dialog>
 
 	<paper-dialog id="popupDialog" opened="{{showPopupDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-		<img id="photopopup" width="200" src="">
-		<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>
+		<img id="photopopup" width="200" src="" on-click="closePopup">
+		<!--<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>-->
 	</paper-dialog>
 
 	<div id='map'></div>
@@ -287,16 +287,16 @@ Polymer({
 	_usersChanged: function(userfeatures, userLayer){
 		this.userLayer.data = userfeatures;
 	},
-	_trailsChanged: function(trailfeatures,trailLayer){
+	/*_trailsChanged: function(trailfeatures,trailLayer){
 		this.trailLayer.data = trailfeatures;
-	},
+	},*/
 	_photosChanged: function(photofeatures, photoLayer){
 		this.photoLayer.data = photofeatures;
 		var fadeImages = photoLayer.drawboard.selectAll('image').filter( function(d) {
 			return (this.style.opacity === ""); // skip any images which are currently in transition
 		});
 		fadeImages.transition('image-fade')
-				.delay(5000)
+				.delay(25000)
 				.duration(5000)
 				.style('opacity', 0);
 
@@ -344,6 +344,9 @@ Polymer({
 			this.routeLayer.data = [];
 		}
 	},
+	_showLogin() {
+		return this.groupid && !this.knownuser;
+	},
 	ready:function(){
 		var self = this;
 		this.map = new d3.mappu.Map('map', {
@@ -362,13 +365,13 @@ Polymer({
 		}).addTo(this.map);
 
 		// The trailLayer makes the map a lot slower.
-		this.trailLayer = new d3.mappu.VectorLayer('trailLayer',{
+		/*this.trailLayer = new d3.mappu.VectorLayer('trailLayer',{
 			reproject: false,
 			style: {
 				fill: 'gray',
 				stroke: 'none'
 			}
-		}).addTo(this.map);
+		}).addTo(this.map);*/
 
 		var opacscale = d3.scale.linear().range([0.3,0.3,1]).domain([0,23,24]);
 		var opacfunc = function(){
@@ -475,6 +478,10 @@ Polymer({
 		popupImg.onload = function() {
 			self.showPopupDialog = true;
 		};
+	},
+
+	closePopup: function() {
+		this.showPopupDialog = false;
 	},
 
 	submitPhoto: function(){
