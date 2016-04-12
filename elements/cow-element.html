@@ -157,8 +157,8 @@ Polymer({
 						type: 'Feature',
 						geometry: {type: 'Point', coordinates: d.data('location')},
 						properties: {
-							user: d.data('user'),
-							group: d.data('group'),
+							user: d.data('username'),
+							userid: d.data('userid'),
 							location: d.data('location'),
 							time: d.updated()
 						}
