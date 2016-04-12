@@ -242,7 +242,7 @@ Polymer({
 		'_curposChanged(curpos,map,me)',
 		'_usersChanged(userfeatures,userLayer)',
 		'_trailsChanged(usertrails,trailLayer)',
-		'_photosChanged(photofeatures, photoLayer)' // TODO ,photoLayer
+		'_photosChanged(photofeatures, photoLayer)'
 	],
 	_routeChanged: function(route){
 		routeHash = route.__queryParams.group;
@@ -258,26 +258,15 @@ Polymer({
 		this.trailLayer.data = trailfeatures;
 	},
 	_photosChanged: function(photofeatures, photoLayer){
-		console.log('_photosChanged');
-		console.log(photofeatures);
-		var projection = d3.geo.mercator().scale(1 / 2 / Math.PI).translate([0, 0]);
-		var images = photoLayer.drawboard.select('g')
-						.selectAll('image')
-						.data(photofeatures, function(d) {return d.id});
-	
-		images.enter().append('g').append('image')
-				.attr('x', function(d) { return projection(d.location)[0]; } )
-				.attr('y', function(d) { return projection(d.location)[1]; } )
-				.attr("width", 64)
-				.attr("height", 64)
-				.attr("xlink:href", function(d){
-					return 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id +'_64.jpeg';
-				});
-
-		images.exit().remove();
+		this.photoLayer.data = photofeatures;
+		var fadeImages = photoLayer.drawboard.selectAll('image').filter( function(d) {
+			return (this.style.opacity === ""); // skip any images which are currently in transition
+		}); 
+		fadeImages.transition('image-fade')
+				.delay(5000)
+				.duration(5000)
+				.style('opacity', 0);
 		
-		//images.transition
-		//this.photoLayer.data = photofeatures;
 	},
 	_curposChanged: function(pos,map,me){
 		if (this.following){
@@ -325,19 +314,20 @@ Polymer({
 
 		var layer = new d3.mappu.RasterLayer('layer1', {
 			ogc_type: 'tms',
-			//url: '//saturnus.geodan.nl/mapproxy/map/tms/1.0.0/nachtkaart/EPSG900913/{z}/{x}/{y}.png',
-			url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+			url: 'https://saturnus.geodan.nl/mapproxy/map/tiles/nachtkaart/EPSG3857/{z}/{x}/{y}.png',
+			//url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
 			opacity: 1
 		}).addTo(this.map);
 
-		this.trailLayer = new d3.mappu.VectorLayer('userLayer',{
+		// The trailLayer makes the map a lot slower.
+		this.trailLayer = new d3.mappu.VectorLayer('trailLayer',{
 			reproject: true,
 			style: {
 				fill: 'gray',
 				stroke: 'none'
 			}
 		}).addTo(this.map);
-
+		
 		var opacscale = d3.scale.linear().range([0.3,0.3,1]).domain([0,23,24]);
 		var opacfunc = function(){
 			return opacscale(self.map.zoom);
@@ -383,19 +373,12 @@ Polymer({
 				.style('opacity',myopac);
 		}
 		setInterval(glower,2000);
-		/*this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
-			reproject: true,
-			duration: 1000,
-			style: {
-				fill: 'steelBlue',
-				stroke: 'none'
-			},
-		}).addTo(this.map);*/
-
+		
 		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
-			reproject: false,
+			reproject: true,
 		}).addTo(this.map);
 
+		this.map.zoombehaviour.on('zoom.follow', function(){ self.following = false; });
 		this.imageElement = this.$.imageelement;
 	},
 
