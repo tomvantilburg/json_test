@@ -339,10 +339,9 @@ Polymer({
 		if (takemehome && this.curpos){
 			this.$.takemehomeelement.takemehome(this.curpos);
 			this.calculating = true;
-			this.routeLayer.visible = true;
 		}
 		else if (!takemehome && this.routeLayer){
-			this.routeLayer.visible = false;
+			this.routeLayer.data = [];
 		}
 	},
 	ready:function(){
