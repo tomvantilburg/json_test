@@ -17,6 +17,7 @@
 <link rel="import" href="./geopos-element.html">
 <link rel="import" href="./image-element.html">
 <link rel="import" href="./about-element.html">
+<link rel="import" href="./takemehome-element.html">
 
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
@@ -67,6 +68,17 @@
 	background: none;
 }
 
+#homebutton{
+	position: fixed;
+	top: 10px;
+	left: 10px;
+	z-index: 101;
+	background: grey;
+}
+#homebutton[active]{
+	background: orange;
+}
+
 #camerainput {
 	position: fixed;
 	bottom: 0;
@@ -104,6 +116,15 @@ star-rating {
 	color: #ff4081;
 }
 
+paper-fab{
+	background-color: orange;
+}
+
+paper-fab[active]{
+	background-color: red;
+}
+
+
 </style>
 <template>
 <!-- NON UI elements -->
@@ -129,6 +150,7 @@ star-rating {
 		speed='{{speed}}'
 	></geopos-element>
 	<image-element id="imageelement"></image-element>
+	<takemehome-element id="takemehomeelement"></takemehome-element>
 
 <div id='content'>
 
@@ -140,7 +162,7 @@ star-rating {
 		</div>
 	</paper-dialog>
 
-	<paper-dialog modal id='logindialog' opened="[[!knownuser]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+	<paper-dialog modal id='logindialog' opened="[[_showLogin]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
 		<h2>Login</h2>
 		<div>
 			<login-element
@@ -175,6 +197,7 @@ star-rating {
 	</paper-dialog>
 
 	<div id='map'></div>
+	<paper-fab mini id="homebutton" toggles active={{takemehome}} icon="icons:home"></paper-fab>
 	<paper-fab mini id="aboutbutton" toggles active={{about}} icon="icons:info-outline"></paper-fab>
 	<paper-fab mini id="locationbutton" toggles active={{following}} icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
@@ -239,6 +262,10 @@ Polymer({
 		following: {
 			value: true,
 			observer: '_followingChanged'
+		},
+		takemehome: {
+			value: false,
+			observer: '_takemehomeChanged'
 		}
 	},
 	observers: [
@@ -257,19 +284,19 @@ Polymer({
 	_usersChanged: function(userfeatures, userLayer){
 		this.userLayer.data = userfeatures;
 	},
-	_trailsChanged: function(trailfeatures,trailLayer){
+	/*_trailsChanged: function(trailfeatures,trailLayer){
 		this.trailLayer.data = trailfeatures;
-	},
+	},*/
 	_photosChanged: function(photofeatures, photoLayer){
 		this.photoLayer.data = photofeatures;
 		var fadeImages = photoLayer.drawboard.selectAll('image').filter( function(d) {
 			return (this.style.opacity === ""); // skip any images which are currently in transition
-		}); 
+		});
 		fadeImages.transition('image-fade')
 				.delay(25000)
 				.duration(5000)
 				.style('opacity', 0);
-		
+
 	},
 	_curposChanged: function(pos,map,me){
 		if (this.following){
@@ -305,6 +332,13 @@ Polymer({
 			this.map.redraw();
 		}
 	},
+	_takemehomeChanged: function(takemehome){
+		if (takemehome && this.curpos)
+			this.$.takemehomeelement.takemehome(this.curpos);
+	},
+	_showLogin() {
+		return this.groupid && !this.knownuser;
+	},
 	ready:function(){
 		var self = this;
 		this.map = new d3.mappu.Map('map', {
@@ -323,14 +357,14 @@ Polymer({
 		}).addTo(this.map);
 
 		// The trailLayer makes the map a lot slower.
-		this.trailLayer = new d3.mappu.VectorLayer('trailLayer',{
-			reproject: true,
+		/*this.trailLayer = new d3.mappu.VectorLayer('trailLayer',{
+			reproject: false,
 			style: {
 				fill: 'gray',
 				stroke: 'none'
 			}
-		}).addTo(this.map);
-		
+		}).addTo(this.map);*/
+
 		var opacscale = d3.scale.linear().range([0.3,0.3,1]).domain([0,23,24]);
 		var opacfunc = function(){
 			return opacscale(self.map.zoom);
@@ -376,7 +410,7 @@ Polymer({
 				.style('opacity',myopac);
 		}
 		setInterval(glower,2000);
-		
+
 		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
 			reproject: true,
 			events: [
@@ -388,6 +422,21 @@ Polymer({
 				}
 			]
 		}).addTo(this.map);
+
+		this.routeLayer = new d3.mappu.VectorLayer('route', {
+				reproject: true,
+				style: {
+					stroke: 'orange',
+					'stroke-width': '5px',
+					fill: 'none',
+					opacity: 1
+				}
+
+		}).addTo(this.map);
+
+		this.addEventListener('newroute', function(d){
+			self.routeLayer.addFeature(d.detail);
+		});
 
 		this.map.zoombehaviour.on('zoom.follow', function(){ self.following = false; });
 		this.imageElement = this.$.imageelement;
