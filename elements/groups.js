@@ -23,6 +23,5 @@ var validGroups = {
 	'5fed0feb3d91ed1db44616314b51d9de' : { groupid: 22 },
 	'62400bf65ba3bddcb5be3c20beee888d' : { groupid: 23 },
 	'62e47785ecc79230ec20e9d55e6e4758' : { groupid: 24 },
-	'666e09847527c270e7514a18b4374e9c' : { groupid: 25 },
-	'test' : { groupid: 26 }
+	'666e09847527c270e7514a18b4374e9c' : { groupid: 25 }
 }
