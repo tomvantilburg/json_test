@@ -22,7 +22,7 @@
     "paper-elements": "PolymerElements/paper-elements#^1.0.7",
     "carbon-elements": "PolymerElements/carbon-elements#^0.1.0",
     "star-rating": "https://github.com/msuchecki/star-rating.git",
-    "d3.mappu": "https://github.com/Geodan/d3.mappu.git#^0.0.2"
+    "d3.mappu": "https://github.com/Geodan/d3.mappu.git#255b91fded58f6700a3131732c8cfc925ead4e41"
   },
   "resolutions": {
     "cow": "^2.2.3"
