@@ -1,0 +1,241 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../bower_components/star-rating/star-rating.html">
+<link rel="import" href="../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../bower_components/neon-animation/animations/fade-out-animation.html">
+
+<link href="../bower_components/iron-icons/maps-icons.html" rel="import">
+<link href="../bower_components/iron-icons/image-icons.html" rel="import">
+
+<link rel="import" href="./cow-element.html">
+<link rel="import" href="./image-element.html">
+
+<script src="../bower_components/d3/d3.js" charset="utf-8"></script>
+<script src="../bower_components/topojson/topojson.js"></script>
+<script src="../bower_components/d3-plugins/geo/tile/tile.js"></script>
+<script src="../bower_components/d3.mappu/dist/d3.mappu.js"></script>
+
+<dom-module id="gmiddag-map">
+<style>
+#map {
+	height: 100%;
+	position: absolute;
+	overflow: hidden;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	top: 0px;
+}
+#content {
+	position: relative;
+	height: 100%;
+}
+
+
+#toast {
+	z-index: 101;
+}
+
+star-rating {
+	display: block;
+	position: relative;
+	margin: -5px;
+	left: 10px;
+	color: #ff4081;
+}
+
+
+</style>
+<template>
+<!-- NON UI elements -->
+
+	<cow-element id='cowelement'
+		username='controluser'
+		groupid='control'
+		userid='controluser'
+		userfeatures='{{userfeatures}}'
+		usertrails='{{usertrails}}'
+		photofeatures='{{photofeatures}}'
+		photos='{{photos}}'
+		me='{{me}}'
+		age='0'
+		sex='hermaphrodite'
+	></cow-element>
+
+	<image-element id="imageelement"></image-element>
+
+<div id='content'>
+
+	<paper-dialog modal id="photoDialog" opened="{{showPhotoDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<img id="photopreview" width="200" src="">
+		<star-rating id="starRating" stars="5" rate="{{photoRating}}"></star-rating>
+		<div class="buttons">
+			<paper-button dialog-dismiss on-click="resetForm">Cancel</paper-button>&nbsp;
+			<paper-button dialog-confirm on-click="submitPhoto">Submit</paper-button>
+		</div>
+	</paper-dialog>
+
+	<paper-dialog id="popupDialog" opened="{{showPopupDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<img id="photopopup" width="200" src="" on-click="closePopup">
+		<!--<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>-->
+	</paper-dialog>
+
+	<div id='map'></div>
+	<paper-toast id="toast" text="{{msg}}"></paper-toast>
+
+</div>
+</template>
+</dom-module>
+
+<script>
+Polymer({
+	is: 'gmiddag-map',
+	properties: {
+		map: {
+			type: Object,
+			notify: true
+		},
+		userfeatures: {
+			type: Array
+		},
+		photofeatures: {
+			type: Array
+		},
+		userLayer: {
+			type: Object
+		},
+		photoLayer: {
+			type: Object
+		},
+		me: {
+			type: Object
+		},
+		showPhotoDialog: false,
+		photoRating: 0,
+		showPopupDialog: false,
+		popupRating: 0,
+		msg: '',
+		imageElement: {
+			type: Object
+		}
+	},
+	observers: [
+		'_usersChanged(userfeatures,userLayer)',
+		'_trailsChanged(usertrails,trailLayer)',
+		'_photosChanged(photofeatures, photoLayer)'
+	],
+	_usersChanged: function(userfeatures, userLayer){
+		this.userLayer.data = userfeatures;
+	},
+	_trailsChanged: function(trailfeatures,trailLayer){
+		this.trailLayer.data = trailfeatures;
+	},
+	_photosChanged: function(photofeatures, photoLayer){
+		this.photoLayer.data = photofeatures.filter(function(d){
+			var maxage = new Date().getTime() - (1000 * 60 * 60 * 24); //not older than 1 day
+			return d.properties.updated > maxage;
+		});
+
+	},
+	ready:function(){
+		var self = this;
+		this.map = new d3.mappu.Map('map', {
+				center: [5.123739, 52.096188],
+				zoom: 24,
+				minZoom: 10,
+				maxZoom: 24,
+				projection: d3.geo.mercator()
+		});
+
+		var layer = new d3.mappu.RasterLayer('layer1', {
+			ogc_type: 'tms',
+			url: 'https://saturnus.geodan.nl/mapproxy/map/tiles/nachtkaart/EPSG3857/{z}/{x}/{y}.png',
+			//url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+			opacity: 1
+		}).addTo(this.map);
+
+
+		this.trailLayer = new d3.mappu.VectorLayer('trailLayer',{
+			reproject: true,
+			style: {
+				fill: 'gray',
+				stroke: 'none'
+			}
+		}).addTo(this.map);
+
+		var opacscale = d3.scale.linear().range([0.3,0.3,1]).domain([0,23,24]);
+		var opacfunc = function(){
+			return opacscale(self.map.zoom);
+		}
+		var groupscale = d3.scale.category20();
+		var bygroup = function(d){
+			return groupscale(d.properties.group);
+		}
+
+		this.userLayer = new d3.mappu.VectorLayer('userLayer',{
+			reproject: true,
+			duration: 1000,
+			labelStyle: {
+				fill: bygroup,
+				stroke: 'none',
+				opacity: opacfunc
+			},
+			style: {
+				fill: bygroup,
+				stroke: 'none'
+			},
+			labelfield: 'name'
+		}).addTo(this.map);
+
+		var myopac = 0;
+		var radius = 0;
+		var self = this;
+
+		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
+			reproject: true,
+			events: [
+				{
+					event: 'click',
+					action: function(d) {
+						self.popupPhoto(d);
+					}
+				}
+			]
+		}).addTo(this.map);
+
+		this.imageElement = this.$.imageelement;
+
+
+
+	},
+
+	attached: function(){
+		this.map.resize();
+	},
+
+	popupPhoto: function(d) {
+		var popupImg = this.$.photopopup;
+		var url = 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id + '_256.jpeg';
+		popupImg.src = url;
+		this.popupRating = d.properties.photorating;
+		var self = this;
+		popupImg.onload = function() {
+			self.showPopupDialog = true;
+		};
+	},
+
+	closePopup: function() {
+		this.showPopupDialog = false;
+	},
+
+	status: function(status){
+		this.msg = status;
+		this.$.toast.open();
+	}
+});
+</script>
