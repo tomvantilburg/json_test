@@ -17,6 +17,7 @@
 <link rel="import" href="./geopos-element.html">
 <link rel="import" href="./image-element.html">
 <link rel="import" href="./about-element.html">
+<link rel="import" href="./takemehome-element.html">
 
 <script src="../bower_components/d3/d3.js" charset="utf-8"></script>
 <script src="../bower_components/topojson/topojson.js"></script>
@@ -67,6 +68,16 @@
 	background: none;
 }
 
+#homebutton{
+	position: fixed;
+	top: 10px;
+	left: 10px;
+	z-index: 101;
+	background: grey;
+}
+#homebutton[active]{
+	background: orange;
+}
 
 #camerainput {
 	position: fixed;
@@ -143,6 +154,7 @@ paper-fab[active]{
 		speed='{{speed}}'
 	></geopos-element>
 	<image-element id="imageelement"></image-element>
+	<takemehome-element id="takemehomeelement"></takemehome-element>
 
 <div id='content'>
 
@@ -184,6 +196,7 @@ paper-fab[active]{
 	</paper-dialog>
 
 	<div id='map'></div>
+	<paper-fab mini id="homebutton" toggles active={{takemehome}} icon="icons:home"></paper-fab>
 	<paper-fab mini id="aboutbutton" toggles active={{about}} icon="icons:info-outline"></paper-fab>
 	<paper-fab mini id="locationbutton" toggles active={{following}} icon="maps:my-location"></paper-fab>
 	<paper-fab mini id="camerabutton" icon="image:camera"></paper-fab>
@@ -246,6 +259,10 @@ Polymer({
 		following: {
 			value: true,
 			observer: '_followingChanged'
+		},
+		takemehome: {
+			value: false,
+			observer: '_takemehomeChanged'
 		}
 	},
 	observers: [
@@ -311,6 +328,10 @@ Polymer({
 			this.map.center = this.curpos;
 			this.map.redraw();
 		}
+	},
+	_takemehomeChanged: function(takemehome){
+		if (takemehome && this.curpos)
+			this.$.takemehomeelement.takemehome(this.curpos);
 	},
 	ready:function(){
 		var self = this;
@@ -387,6 +408,21 @@ Polymer({
 		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
 			reproject: true,
 		}).addTo(this.map);
+
+		this.routeLayer = new d3.mappu.VectorLayer('route', {
+				reproject: true,
+				style: {
+					stroke: 'orange',
+					'stroke-width': '5px',
+					fill: 'none',
+					opacity: 1
+				}
+
+		}).addTo(this.map);
+
+		this.addEventListener('newroute', function(d){
+			self.routeLayer.addFeature(d.detail);
+		});
 
 		this.map.zoombehaviour.on('zoom.follow', function(){ self.following = false; });
 		this.imageElement = this.$.imageelement;
