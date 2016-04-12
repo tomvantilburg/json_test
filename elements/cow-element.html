@@ -141,7 +141,7 @@ Polymer({
 						}
 					};
 				});
-
+				/* Disabled, takes too many resources
 				self.usertrails = items.filter(function(d){
 					return !d.deleted() && d.data('type') === 'user' && d.data('location');
 				}).map(function(d){
@@ -157,23 +157,7 @@ Polymer({
 						}
 					};
 				});
-
-				self.usertrails = items.filter(function(d){
-					return !d.deleted() && d.data('type') === 'user' && d.data('location');
-				}).map(function(d){
-					return {
-						id: d.id(),
-						type: 'Feature',
-						geometry: {type: 'Point', coordinates: d.data('location')},
-						properties: {
-							user: d.data('user'),
-							group: d.data('group'),
-							location: d.data('location'),
-							time: d.updated()
-						}
-					};
-				});
-
+				*/
 			});
 		});
 
