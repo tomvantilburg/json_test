@@ -114,7 +114,7 @@ star-rating {
 	position: relative;
 	margin: -5px;
 	left: 10px;
-	color: #ff4081;
+	color: orange;
 }
 
 paper-fab{
@@ -145,6 +145,7 @@ paper-fab[active]{
 		sex='{{sex}}'
 	></cow-element>
 	<geopos-element id='geoposelement'
+		me='[[me]]'
 		curposition='{{curpos}}'
 		distance='{{distance}}'
 		totaldistance='{{totaldistance}}'
@@ -163,8 +164,8 @@ paper-fab[active]{
 		</div>
 	</paper-dialog>
 
-	<paper-dialog modal id='logindialog' opened="[[_showLogin(groupid, knownuser)]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-		<h2>Login</h2>
+	<paper-dialog modal id='logindialog' opened="[[showLogin]]" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+		<h2>Login groep [[groupid]]</h2>
 		<div>
 			<login-element
 				username='{{username}}'
@@ -172,6 +173,7 @@ paper-fab[active]{
 				knownuser='{{knownuser}}'
 				age='{{age}}'
 				sex='{{sex}}'
+				groupid='[[groupid]]'
 			></login-element>
 		</div>
 	</paper-dialog>
@@ -220,6 +222,9 @@ paper-fab[active]{
 Polymer({
 	is: 'gmiddag-mobile',
 	properties: {
+		showLogin: {
+			type: Boolean
+		},
 		map: {
 			type: Object,
 			notify: true
@@ -281,8 +286,9 @@ Polymer({
 	observers: [
 		'_curposChanged(curpos,map,me)',
 		'_usersChanged(userfeatures,userLayer)',
-		'_trailsChanged(usertrails,trailLayer)',
-		'_photosChanged(photofeatures, photoLayer)'
+		//'_trailsChanged(usertrails,trailLayer)',
+		'_photosChanged(photofeatures, photoLayer)',
+		'_showLogin(groupid, knownuser)'
 	],
 	_routeChanged: function(route){
 		routeHash = route.__queryParams.group;
@@ -305,12 +311,14 @@ Polymer({
 		var fadeImages = photoLayer.drawboard.selectAll('image').filter( function(d) {
 			return (this.style.opacity === ""); // skip any images which are currently in transition
 		});
-		fadeImages.transition('image-fade')
+		fadeImages.style('opacity', 1.0)
+				.transition('image-fade')
 				.delay(25000)
 				.duration(5000)
-				.style('opacity', 0);
-
+				.style('opacity', 0)
+				.each('end', function(d) { this.style.display = 'none';	});
 	},
+
 	_curposChanged: function(pos,map,me){
 		if (this.following){
 			map.center = pos;
@@ -355,7 +363,7 @@ Polymer({
 		}
 	},
 	_showLogin(groupid, knownuser) {
-		return groupid && !knownuser;
+		this.showLogin = groupid && !knownuser;
 	},
 	ready:function(){
 		var self = this;

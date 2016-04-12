@@ -1,6 +1,6 @@
 var validGroups = {
-	'009fdf4bcb23b1c3f09afdf9c741ea71' : { groupid: 1  },
-	'035d88283a5395cd38f6e8a1a8be516e' : { groupid: 2  },
+	'035d88283a5395cd38f6e8a1a8be516e' : { groupid: 1  },
+	'009fdf4bcb23b1c3f09afdf9c741ea71' : { groupid: 2  },
 	'082e2f029164704ab0a928445960ebea' : { groupid: 3  },
 	'0a72e35c10220d1415e67a8ab392d259' : { groupid: 4  },
 	'1412f9ce8b78cbc91cf243f573943f5b' : { groupid: 5  },

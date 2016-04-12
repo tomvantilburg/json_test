@@ -172,8 +172,9 @@ Polymer({
 		//We have a userid from client, now see if it is known in cow
 		this.cow.userStore().loaded.then(function(){
 			//Do I exist?
-			self.me = self.userid?cow.users(self.userid):null;
-			if(!self.me) {
+			if (cow.users(self.userid)) {
+				self.me = cow.users(self.userid);
+			} else {
 				self.me = cow.users({_id:self.userid})
 					.data('name',self.username)
 					.data('group',self.groupid)
