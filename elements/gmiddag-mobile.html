@@ -2,6 +2,7 @@
 <link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../bower_components/iron-form/iron-form.html">
@@ -192,8 +193,14 @@ paper-fab[active]{
 	</paper-dialog>
 
 	<paper-dialog id="popupDialog" opened="{{showPopupDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-		<img id="photopopup" width="200" src="" on-click="closePopup">
-		<!--<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>-->
+		<paper-card image="{{popupUrl}}" class="white" on-click="closePopup">
+			<div class="card-content">
+				Door: {{popupUser}}
+				<small>groep {{popupGroup}}</small>
+				<star-rating id="popupRating" readonly="true" stars="5" rate="{{popupRating}}"></star-rating>
+			</div>
+		</paper-card>
+		<!--<img id="photopopup" width="200" src="" on-click="closePopup">-->
 	</paper-dialog>
 
 	<div id='map'></div>
@@ -473,14 +480,19 @@ Polymer({
 	},
 
 	popupPhoto: function(d) {
+		//TODO: this would fit better in a seperate element, so we can also repeat
 		var popupImg = this.$.photopopup;
 		var url = 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id + '_256.jpeg';
-		popupImg.src = url;
+		//popupImg.src = url;
+		this.popupUrl = url;
+		this.popupUser = d.properties.user;
+		this.popupGroup = d.properties.group;
 		this.popupRating = d.properties.photorating;
+		this.showPopupDialog = true;
 		var self = this;
-		popupImg.onload = function() {
-			self.showPopupDialog = true;
-		};
+		//popupImg.onload = function() {
+			//self.showPopupDialog = true;
+		//};
 	},
 
 	closePopup: function() {
