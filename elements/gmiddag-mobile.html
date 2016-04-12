@@ -287,9 +287,9 @@ Polymer({
 	_usersChanged: function(userfeatures, userLayer){
 		this.userLayer.data = userfeatures;
 	},
-	/*_trailsChanged: function(trailfeatures,trailLayer){
-		this.trailLayer.data = trailfeatures;
-	},*/
+	_trailsChanged: function(trailfeatures,trailLayer){
+		//this.trailLayer.data = trailfeatures;
+	},
 	_photosChanged: function(photofeatures, photoLayer){
 		this.photoLayer.data = photofeatures.filter(function(d){
 			var maxage = new Date().getTime() - (1000 * 60); //not older than 1 minute
