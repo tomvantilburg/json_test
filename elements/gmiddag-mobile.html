@@ -44,6 +44,10 @@
 	bottom: 10px;
 	left: 10px;
 	z-index: 101;
+	background-color: grey;
+}
+#locationbutton[active]{
+	background-color: orange;
 }
 
 #camerabutton{
@@ -51,6 +55,7 @@
 	bottom: 10px;
 	right: 10px;
 	z-index: 101;
+	background-color: orange;
 }
 
 
@@ -61,6 +66,7 @@
 	z-index: 101;
 	background: none;
 }
+
 
 #camerainput {
 	position: fixed;
@@ -110,6 +116,7 @@ paper-fab{
 paper-fab[active]{
 	background-color: red;
 }
+
 
 </style>
 <template>
@@ -245,7 +252,7 @@ Polymer({
 		'_curposChanged(curpos,map,me)',
 		'_usersChanged(userfeatures,userLayer)',
 		'_trailsChanged(usertrails,trailLayer)',
-		'_photosChanged(photofeatures, photoLayer)' // TODO ,photoLayer
+		'_photosChanged(photofeatures, photoLayer)'
 	],
 	_routeChanged: function(route){
 		routeHash = route.__queryParams.group;
@@ -261,10 +268,15 @@ Polymer({
 		this.trailLayer.data = trailfeatures;
 	},
 	_photosChanged: function(photofeatures, photoLayer){
-		console.log('_photosChanged');
-		console.log(photofeatures);
+		this.photoLayer.data = photofeatures;
+		var fadeImages = photoLayer.drawboard.selectAll('image').filter( function(d) {
+			return (this.style.opacity === ""); // skip any images which are currently in transition
+		});
+		fadeImages.transition('image-fade')
+				.delay(5000)
+				.duration(5000)
+				.style('opacity', 0);
 
-		//this.photoLayer.data = photos;
 	},
 	_curposChanged: function(pos,map,me){
 		if (this.following){
@@ -303,7 +315,7 @@ Polymer({
 	ready:function(){
 		var self = this;
 		this.map = new d3.mappu.Map('map', {
-				center: [4.90,52.36],
+				center: [5.123739, 52.096188],
 				zoom: 24,
 				minZoom: 10,
 				maxZoom: 24,
@@ -312,13 +324,14 @@ Polymer({
 
 		var layer = new d3.mappu.RasterLayer('layer1', {
 			ogc_type: 'tms',
-			//url: '//saturnus.geodan.nl/mapproxy/map/tms/1.0.0/nachtkaart/EPSG900913/{z}/{x}/{y}.png',
-			url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
+			url: 'https://saturnus.geodan.nl/mapproxy/map/tiles/nachtkaart/EPSG3857/{z}/{x}/{y}.png',
+			//url: 'http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
 			opacity: 1
 		}).addTo(this.map);
 
-		this.trailLayer = new d3.mappu.VectorLayer('userLayer',{
-			reproject: true,
+		// The trailLayer makes the map a lot slower.
+		this.trailLayer = new d3.mappu.VectorLayer('trailLayer',{
+			reproject: false,
 			style: {
 				fill: 'gray',
 				stroke: 'none'
@@ -370,19 +383,12 @@ Polymer({
 				.style('opacity',myopac);
 		}
 		setInterval(glower,2000);
-		/*this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
-			reproject: true,
-			duration: 1000,
-			style: {
-				fill: 'steelBlue',
-				stroke: 'none'
-			},
-		}).addTo(this.map);*/
 
 		this.photoLayer = new d3.mappu.VectorLayer('photoLayer',{
-			reproject: false,
+			reproject: true,
 		}).addTo(this.map);
 
+		this.map.zoombehaviour.on('zoom.follow', function(){ self.following = false; });
 		this.imageElement = this.$.imageelement;
 	},
 
@@ -427,7 +433,7 @@ Polymer({
 			}
 
 			var responseJSON = JSON.parse(response.substr(pos));
-			var photoID = responseJSON.filename;
+			var photoID = responseJSON.id;
 			if (!photoID) {
 				self.status('Did not receive photo ID.');
 				self.previewPhoto(); // preview the photo again, so the user can resubmit
