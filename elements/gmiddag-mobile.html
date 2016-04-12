@@ -170,8 +170,8 @@ star-rating {
 	</paper-dialog>
 
 	<paper-dialog id="popupDialog" opened="{{showPopupDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-		<img id="photopopup" width="200" src="">
-		<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>
+		<img id="photopopup" width="200" src="" on-click="closePopup">
+		<!--<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>-->
 	</paper-dialog>
 
 	<div id='map'></div>
@@ -266,7 +266,7 @@ Polymer({
 			return (this.style.opacity === ""); // skip any images which are currently in transition
 		}); 
 		fadeImages.transition('image-fade')
-				.delay(5000)
+				.delay(25000)
 				.duration(5000)
 				.style('opacity', 0);
 		
@@ -420,6 +420,10 @@ Polymer({
 		popupImg.onload = function() {
 			self.showPopupDialog = true;
 		};		
+	},
+	
+	closePopup: function() {
+		this.showPopupDialog = false;
 	},
 	
 	submitPhoto: function(){
