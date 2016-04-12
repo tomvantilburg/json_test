@@ -17,12 +17,12 @@
   ],
   "dependencies": {
     "cow": "https://github.com/Geodan/cow.git#^2.2.3",
-    "d3.mappu": "https://github.com/tomvantilburg/d3.mappu.git",
     "underscore": "^1.8.3",
     "iron-elements": "PolymerElements/iron-elements#^1.0.9",
     "paper-elements": "PolymerElements/paper-elements#^1.0.7",
     "carbon-elements": "PolymerElements/carbon-elements#^0.1.0",
-    "star-rating": "https://github.com/msuchecki/star-rating.git"
+    "star-rating": "https://github.com/msuchecki/star-rating.git",
+    "d3.mappu": "https://github.com/Geodan/d3.mappu.git#^0.0.2"
   },
   "resolutions": {
     "cow": "^2.2.3"
