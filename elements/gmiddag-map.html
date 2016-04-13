@@ -78,6 +78,11 @@ path.cell {
   display: inherit;
 }
 
+#photopopup {
+	max-width: 600px;
+	max-height: 600px;
+}
+
 </style>
 <template>
 <!-- NON UI elements -->
@@ -124,8 +129,12 @@ path.cell {
 	    <paper-toolbar></paper-toolbar>
 		<div id='content' class='content fit'>
 			<paper-dialog id="popupDialog" opened="{{showPopupDialog}}" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
-				<img id="photopopup" width="200" src="" on-click="closePopup">
-				<!--<star-rating id="popupRating" stars="5" rate="{{popupRating}}"></star-rating>-->
+					<img id="photopopup" src="" on-click="closePopup">
+					<div class="card-content" align="center">
+						Door: {{popupUser}}
+						<small>groep {{popupGroup}}</small>
+						<star-rating id="popupRating" readonly="true" stars="5" rate="{{popupRating}}"></star-rating>
+					</div>
 			</paper-dialog>
 
 			<div id='map' class='fit'></div>
@@ -355,13 +364,27 @@ Polymer({
 
 	popupPhoto: function(d) {
 		var popupImg = this.$.photopopup;
-		var url = 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id + '_256.jpeg';
+		var url = 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id + '.jpeg';
 		popupImg.src = url;
 		this.popupRating = d.properties.photorating;
 		var self = this;
 		popupImg.onload = function() {
 			self.showPopupDialog = true;
 		};
+		
+		var popupImg = this.$.photopopup;
+		var url = 'https://saturnus.geodan.nl/geodanmiddag/uploads/' + d.id + '.jpeg';
+		popupImg.src = url;
+		//this.popupUrl = url;
+		this.popupUser = d.properties.user;
+		this.popupGroup = d.properties.group;
+		this.popupRating = d.properties.photorating;
+		//this.showPopupDialog = true;
+		var self = this;
+		popupImg.onload = function() {
+			self.showPopupDialog = true;
+		};
+
 	},
 
 	closePopup: function() {
