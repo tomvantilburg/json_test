@@ -288,7 +288,7 @@ Polymer({
         locations = feats.map(function(d){
             return self.map.projection([d.geometry.coordinates[0],d.geometry.coordinates[1]]);
         });
-        if (this.voronoiLayer){
+        if (this.voronoiLayerx){
             //this.voronoiLayer.drawboard.style('pointer-events','auto'); //CAREFULL, affects events on other layers
             var cells = this.voronoiLayer.drawboard.select("g").attr('id','cells');
 
